@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <raylib.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -15,11 +16,14 @@ void* state = NULL;
 void ReloadPlugin();
 
 int main(int argc, char** argv) {
-	if (argc != 2) {
-		fprintf(stderr, "Usage ./casm <filename>\n");
+	if (argc == 2 && strcmp(argv[1], "-h") == 0) {
+		printf("Usage ./casm [filename]\n");
 		exit(1);
 	}
-	char* filename = argv[1];
+	char* filename = NULL;
+	if (argc == 2) {
+		filename = argv[1];
+	}
 
 
 	InitWindow(800, 600, "Mini Asm");	

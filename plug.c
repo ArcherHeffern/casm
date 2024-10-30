@@ -9,7 +9,8 @@
 #define CELL_SIZE 1024
 #define MEMORY_SIZE 64
 #define STORAGE_SIZE 64
-#define MAX_ANIMATIONS 8
+#define MAX_ANIMATIONS 256
+#define RESET_DELAY 0.1
 
 typedef struct State State;
 typedef struct RenderInfo RenderInfo;
@@ -17,12 +18,14 @@ typedef struct Animation Animation;
 typedef enum EasingFunction EasingFunction;
 
 // Rendering Constants
-#define SLIDE_IN_TIME 1.5 // Seconds
+#define SLIDE_IN_TIME 0.5 // Seconds
 #define X_PADDING 40
 
 struct RenderInfo {
 	Color background;
 	Color font_color;
+	Color pc_color; 
+	Color button_color;
 	int header_gap;
 	double register_height;
 	double memory_height;
@@ -36,18 +39,21 @@ struct RenderInfo {
 	Color cell_color;
 	int scroll_speed;
 	Animation* animations[MAX_ANIMATIONS]; 
-	Rectangle pointer; // Program Counter
+	Rectangle memory_pointer; // Program Counter
+	Rectangle storage_pointer; 
 };
 
 enum EasingFunction {
 	LINEAR,
-	IN_N_OUT
+	IN_N_OUT,
+	IN_N_BACK // Treats end_val as the midpoint value and returns to start_val
 };
 
 struct Animation {
 	EasingFunction easing;
 	double percent; // 0-1 completeness
 	float duration; // Seconds
+	float delay; // Seconds
 	double start_val;
 	double end_val;
 	double* value;
@@ -77,8 +83,10 @@ void plug_update();
 // ============
 // Animations
 // ============
-void CreateAnimation(double end, double* value, EasingFunction easing);
+void CreateAnimation(double end, double* value, EasingFunction easing, float delay);
 void AnimationStep(Animation* animation, float dt);
+void SetActiveMemoryCell(int cell, EasingFunction easing, float delay);
+void SetActiveStorageCell(int cell, EasingFunction easing, float delay);
 void AnimationFree(Animation* animation);
 
 // ============
@@ -97,12 +105,14 @@ void RenderMemory();
 void RenderRegisters();
 void RenderRegister(int i);
 void RenderStorage();
+void RenderControls();
 
 // ============
 // Misc
 // ============
 float GetMidPoint();
-uint16_t LoadFileIntoMemory(char* filename, char* memory[]);
+void HandleFileUpload();
+uint16_t LoadFileIntoMemory(char* filepath, char* memory[]);
 
 // ============
 // Utilities
@@ -115,6 +125,9 @@ double MinDouble(double a, double b) {
 }
 float MinFloat(float a, float b) {
 	return a < b? a: b;
+}
+float MaxFloat(float a, float b) {
+	return a > b? a: b;
 }
 int MaxInt(int a, int b) {
 	return a > b ? a: b;
@@ -138,6 +151,8 @@ void plug_init(char* filename) {
 	RenderInfo render_info = {
 		.background = GetColor(0x181818FF),
 		.font_color = GetColor(0xFFFFFFFF),
+		.pc_color = BLUE,
+		.button_color = GRAY,
 		.header_gap = 100,
 		.register_height = GetScreenHeight(),
 		.memory_height = GetScreenHeight(),
@@ -151,7 +166,13 @@ void plug_init(char* filename) {
 		.cell_color = GetColor(0xcaccde),
 		.scroll_speed = 4,
 		.animations = { NULL },
-		.pointer = {
+		.memory_pointer = {
+			.x = 0,
+			.y = 0,
+			.width = 270,
+			.height = 85
+		},
+		.storage_pointer = {
 			.x = 0,
 			.y = 0,
 			.width = 270,
@@ -163,8 +184,12 @@ void plug_init(char* filename) {
 	assert(s != NULL);
 	memset(s, 0, sizeof(State));
 	s->render_info = render_info;
-	s->render_info.pointer.y = GetMidPoint() - (s->render_info.pointer.height - s->render_info.cell_height) / 2;
-	s->render_info.pointer.x = X_PADDING - (s->render_info.pointer.width - s->render_info.cell_width) / 2;
+	float mid_y = GetMidPoint() - (s->render_info.memory_pointer.height - s->render_info.cell_height) / 2;
+	s->render_info.memory_pointer.y = mid_y;
+	s->render_info.memory_pointer.x = X_PADDING - (s->render_info.memory_pointer.width - s->render_info.cell_width) / 2;
+
+	s->render_info.storage_pointer.y = mid_y;
+	s->render_info.storage_pointer.x = GetScreenWidth() - X_PADDING - (s->render_info.storage_pointer.width - s->render_info.cell_width) / 2 - s->render_info.cell_width;
 	LoadFileIntoMemory(filename, s->memory);
 
 	StartVisualisation();
@@ -185,12 +210,13 @@ void plug_update() {
 // -------------
 // Animations
 // -------------
-void CreateAnimation(double end, double* value, EasingFunction easing) {
+void CreateAnimation(double end, double* value, EasingFunction easing, float delay) {
 	RenderInfo* render_info = &s->render_info;
 	Animation* animation = (Animation*)malloc(sizeof(Animation));
 	animation->easing = easing;
 	animation->percent = 0;
 	animation->duration = SLIDE_IN_TIME; 
+	animation->delay = delay;
 	animation->start_val = *value;
 	animation->end_val = end;
 	animation->value = value;
@@ -202,13 +228,27 @@ void CreateAnimation(double end, double* value, EasingFunction easing) {
 	}
 }
 
-void SetActiveMemoryCell(int cell, EasingFunction easing) {
+void SetActiveMemoryCell(int cell, EasingFunction easing, float delay) {
 	RenderInfo* render_info = &s->render_info;
 	float end = -render_info->cell_height*cell - render_info->cell_gap*cell + GetScreenHeight() / 2 - render_info->cell_height / 2;
-	CreateAnimation(end, &render_info->memory_height, easing);
+	CreateAnimation(end, &render_info->memory_height, easing, delay);
+}
+
+void SetActiveStorageCell(int cell, EasingFunction easing, float delay) {
+	RenderInfo* render_info = &s->render_info;
+	float end = -render_info->cell_height*cell - render_info->cell_gap*cell + GetScreenHeight() / 2 - render_info->cell_height / 2;
+	CreateAnimation(end, &render_info->storage_height, easing, delay);
 }
 
 void AnimationStep(Animation* animation, float dt) {
+	if (animation->delay > 0) {
+		float remaining_time = animation->delay - dt;
+		animation->delay = MaxFloat(0, remaining_time);
+		dt += remaining_time;
+	}
+	if (animation->delay > 0) {
+		return;
+	}
 	animation->percent = MinDouble(dt / animation->duration + animation->percent, 1.0F);
 	float percent = animation->percent;
 	switch (animation->easing) {
@@ -236,17 +276,32 @@ void StartVisualisation() {
 	RenderInfo* render_info = &s->render_info;
 	InitWindow(800, 600, "Mini Asm");	
 	Render();
-	SetActiveMemoryCell(0, IN_N_OUT);
+	SetActiveMemoryCell(0, IN_N_OUT, 0);
 	Run();
-	SetActiveMemoryCell(1, IN_N_OUT);
+	CreateAnimation(
+		GetScreenHeight() - 10*(render_info->register_cell_height + render_info->register_cell_gap),
+		&render_info->register_height,
+		IN_N_OUT,
+		0
+	);
 	Run();
-	SetActiveMemoryCell(2, IN_N_OUT);
+	SetActiveStorageCell(0, IN_N_OUT, 0);
 	Run();
+	SetActiveMemoryCell(1, IN_N_OUT, 0);
+	Run();
+	SetActiveMemoryCell(2, IN_N_OUT, 0);
+	Run();
+	SetActiveMemoryCell(3, IN_N_OUT, 1);
 	return;
 	Run();
 	// CreateRegisterSeekEvent(render_info->register_cell_height+, IN_N_OUT);
 	Run();
-	CreateAnimation(0, &render_info->storage_height, IN_N_OUT);
+	CreateAnimation(
+		0, 
+		&render_info->storage_height, 
+		IN_N_OUT,
+		0
+	);
 	Run();
 }
 
@@ -257,8 +312,10 @@ void Run() {
 		}
 	}
 }
+
 bool Step() {
 	bool animations_left = StepAnimations();
+	HandleFileUpload();
 	Render();
 	return animations_left;
 }
@@ -294,6 +351,7 @@ void Render() {
 		RenderMemory();
 		RenderRegisters();
 		RenderStorage();
+		RenderControls();
 	EndDrawing();
 }
 
@@ -313,9 +371,9 @@ void RenderMemory() {
 		);
 		char* msg = NULL;
 		asprintf(&msg, "Ox%x: %s", i*4, memory[i]);
-		DrawText(msg, X_PADDING, y+render_info->cell_height/2, 12, render_info->font_color);
+		DrawText(msg, X_PADDING + 20, y+render_info->cell_height/2, 12, render_info->font_color);
 	}
-	DrawRectangleLinesEx(render_info->pointer, 2.0F, BLUE); 
+	DrawRectangleLinesEx(render_info->memory_pointer, 2.0F, render_info->pc_color); 
 }
 
 void RenderRegisters() {
@@ -323,16 +381,15 @@ void RenderRegisters() {
 	float textWidth = MeasureTextEx(GetFontDefault(), "Registers", 24, 1).x;
 	Vector2 position = { .x=GetScreenWidth()/2 - textWidth/2, .y=render_info->cell_gap };
 	DrawTextEx(GetFontDefault(), "registers", position, 24, 1, render_info->font_color);
-	RenderRegister(9);
-	//for (int i = 0; i < 10; i++) {
-		//RenderRegister(i);
-	//}
+	for (int i = 0; i < 10; i++) {
+		RenderRegister(i);
+	}
 }
 
 void RenderRegister(int i) {
 	RenderInfo* render_info = &s->render_info;
 	int x = GetScreenWidth() / 2 - (render_info->register_cell_width/2);
-	int y = GetScreenHeight(); //+ render_info->register_height - render_info->register_cell_height* 1.15 * (9-i);
+	int y = render_info->register_height + render_info->register_cell_height* (1+render_info->register_cell_gap) * (i-1) - 20;
 	DrawRectangle(
 		x,
 		y,
@@ -346,7 +403,7 @@ void RenderRegister(int i) {
 		free(msg);
 		asprintf(&msg, "PC: %d", s->registers[0]);
 	}
-	DrawText(msg, x, y+render_info->register_cell_height/2, 12, render_info->font_color);
+	DrawText(msg, x+20, y+render_info->register_cell_height/2, 12, render_info->font_color);
 }
 
 void RenderStorage() {
@@ -366,16 +423,84 @@ void RenderStorage() {
 		);
 		char* msg = NULL;
 		asprintf(&msg, "Ox%x: %s", i*4, storage[i]);
-		DrawText(msg, GetScreenWidth() - X_PADDING - render_info->cell_width, y+render_info->cell_height/2, 12, render_info->font_color);
+		DrawText(msg, GetScreenWidth() - X_PADDING - render_info->cell_width + 20, y+render_info->cell_height/2, 12, render_info->font_color);
 	}
+	DrawRectangleLinesEx(render_info->storage_pointer, 2.0F, render_info->pc_color); 
 }
 
+void RenderControls() {
+	RenderInfo* render_info = &s->render_info;
+	char* instruction = "Drag assembly file to upload";
+	Vector2 textSize = MeasureTextEx(GetFontDefault(), instruction, 12, 1);
+	DrawText(instruction, GetScreenWidth()/2 - textSize.x/2, render_info->header_gap, 12, render_info->font_color);
+	
+	float width = render_info->register_cell_width/2 * (1-render_info->register_cell_gap);
+	float height = render_info->register_cell_height + render_info->register_cell_gap;
+	float gap = render_info->register_cell_width * render_info->register_cell_gap * 0.5;
+	Rectangle continue_button = {
+		.x=GetScreenWidth()/2 + gap,
+		.y=(render_info->header_gap + textSize.y) * (1+render_info->register_cell_gap),
+		.width=width,
+		.height=height
+	};
+	DrawRectangleRec(continue_button, render_info->button_color);
+
+	char* continue_text = "(C)ontinue";
+	textSize = MeasureTextEx(GetFontDefault(), continue_text, 12, 1);
+	DrawText(
+		continue_text, 
+		continue_button.x+continue_button.width/2-textSize.x/2, 
+		continue_button.y+continue_button.height/2-textSize.y/2, 
+		12, 
+		render_info->font_color
+	);
+	
+	Rectangle step_button = {
+		.x=GetScreenWidth()/2 - (render_info->register_cell_width/2),
+		.y=(render_info->header_gap + textSize.y) * (1+render_info->register_cell_gap),
+		.width=width,
+		.height=height,
+	};
+	DrawRectangleRec(step_button, render_info->button_color);
+
+	char* step_text = "(S)tep";
+	textSize = MeasureTextEx(GetFontDefault(), step_text, 12, 1);
+	DrawText(
+		step_text, 
+		step_button.x+step_button.width/2-textSize.x/2, 
+		step_button.y+step_button.height/2-textSize.y/2, 
+		12, 
+		render_info->font_color
+	);
+}
 // ============
 // Misc
 // ============
-uint16_t LoadFileIntoMemory(char* filename, char* memory[]) {
+
+void HandleFileUpload() {
+	if (!IsFileDropped()) {
+		return;
+	}
+	FilePathList files = LoadDroppedFiles();
+	assert(files.count > 0 && "Expected a file to be uploaded");
+	char* file_path = files.paths[0];
+	LoadFileIntoMemory(file_path, s->memory);
+	UnloadDroppedFiles(files);
+}
+
+void ResetState() {
+	SetActiveMemoryCell(0, IN_N_OUT, 0);
+	SetActiveStorageCell(0, IN_N_OUT, 0);
+	// TODO: Go booop boop boop each cell that now has a value and removed a value (Memory and Storage)
+	// TODO: Reset the registers one after another
+}
+
+uint16_t LoadFileIntoMemory(char* filepath, char* memory[]) {
+	if (filepath == NULL) {
+		return 0;
+	}
 	FILE* file_p;
-	if ((file_p = fopen(filename, "r")) < 0) {
+	if ((file_p = fopen(filepath, "r")) < 0) {
 		perror("Open file: ");
 		exit(1);
 	}
