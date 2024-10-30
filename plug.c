@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,36 +12,25 @@
 #define MAX_EVENTS 8
 
 typedef struct State State;
-typedef struct Registers Registers;
 typedef struct RenderInfo RenderInfo;
 typedef struct UpdateEvent UpdateEvent;
 typedef enum UpdateEventType UpdateEventType;
 typedef enum EasingFunction EasingFunction;
 
 // Rendering Constants
+#define SLIDE_IN_TIME .5 // Seconds
 #define X_PADDING 40
-
-struct Registers {
-	int pc; // Program Counter
-	char* ir; // Instuction Register
-	int r1;
-	int r2;
-	int r3;
-	int r4;
-	int r5;
-	int r6;
-	int r7;
-	int r8;
-	int r9;
-}; 
 
 struct RenderInfo {
 	Color background;
 	Color font_color;
 	float start_time;
 	int header_gap;
+	double register_height;
 	double memory_height;
 	double storage_height;
+	int register_cell_width;
+	int register_cell_height;
 	int cell_height;
 	int cell_width;
 	int cell_gap;
@@ -51,7 +41,9 @@ struct RenderInfo {
 };
 
 enum UpdateEventType {
-	MEMORY_SEEK
+	REGISTER_SEEK,
+	MEMORY_SEEK,
+	STORAGE_SEEK
 };
 
 enum EasingFunction {
@@ -69,10 +61,14 @@ struct UpdateEvent {
 	float end_val;
 };
 
+void UpdateEventPrint(UpdateEvent* e) {
+	printf("{ .%%=%lf, .duration=%f, .start=%f, .end=%f }\n", e->percent, e->duration, e->start_val, e->end_val);
+}
+
 
 struct State {
 	RenderInfo render_info;
-	Registers registers;
+	int registers[10];
 	char* memory[MEMORY_SIZE];
 	char* storage[STORAGE_SIZE];
 };
@@ -86,6 +82,7 @@ void plug_update();
 void StartVisualisation();
 void RenderEvents();
 void RenderFrame();
+void RenderRegister(int i);
 int MinInt(int a, int b) {
 	return a < b ? a: b;
 }
@@ -155,8 +152,11 @@ void plug_init(char* filename) {
 		.font_color = GetColor(0xFFFFFFFF),
 		.start_time = 2.5,
 		.header_gap = 100,
-		.memory_height = 0,
-		.storage_height = 0,
+		.register_height = GetScreenHeight(),
+		.memory_height = GetScreenHeight(),
+		.storage_height = GetScreenHeight(),
+		.register_cell_width = 160,
+		.register_cell_height = 40,
 		.cell_height = 65,
 		.cell_width = 250,
 		.cell_gap = 20,
@@ -171,15 +171,10 @@ void plug_init(char* filename) {
 		},
 	};
 
-	Registers registers;
-	registers.pc = 0;
-	registers.ir = "";
-
 	s = malloc(sizeof(State));
 	assert(s != NULL);
-	memset(s, 0, sizeof(*s));
+	memset(s, 0, sizeof(State));
 	s->render_info = render_info;
-	s->registers = registers;
 	s->render_info.pointer.y = GetMidPoint() - (s->render_info.pointer.height - s->render_info.cell_height) / 2;
 	s->render_info.pointer.x = X_PADDING - (s->render_info.pointer.width - s->render_info.cell_width) / 2;
 	LoadFileIntoMemory(filename, s->memory);
@@ -198,16 +193,54 @@ void plug_post_reload(void* state) {
 // -------------
 // Events
 // -------------
+void CreateRegisterSeekEvent(float y, EasingFunction easing) {
+	// Only seeks to a cell, does not modify program counter
+	RenderInfo* render_info = &s->render_info;
+	UpdateEvent* event = (UpdateEvent*)malloc(sizeof(UpdateEvent));
+	event->type = REGISTER_SEEK;
+	event->which = -1; // Not used
+	event->easing = easing;
+	event->percent = 0;
+	event->duration = SLIDE_IN_TIME; 
+	event->start_val = render_info->register_height;
+	event->end_val = y;
+	for (int i = 0; i < MAX_EVENTS; i++) {
+		if (render_info->update_events[i] == NULL) {
+			render_info->update_events[i] = event;
+			break;
+		}
+	}
+}
 void CreateMemorySeekEvent(uint16_t index, EasingFunction easing) {
+	// Only seeks to a cell, does not modify program counter
 	RenderInfo* render_info = &s->render_info;
 	UpdateEvent* event = (UpdateEvent*)malloc(sizeof(UpdateEvent));
 	event->type = MEMORY_SEEK;
 	event->which = index;
 	event->easing = easing;
 	event->percent = 0;
-	event->duration = 2; 
+	event->duration = SLIDE_IN_TIME; 
 	event->start_val = render_info->memory_height;
-	event->end_val = render_info->cell_height*index + render_info->cell_gap*index + GetScreenHeight() / 2 - render_info->cell_height / 2;
+	event->end_val = -render_info->cell_height*index - render_info->cell_gap*index + GetScreenHeight() / 2 - render_info->cell_height / 2;
+	for (int i = 0; i < MAX_EVENTS; i++) {
+		if (render_info->update_events[i] == NULL) {
+			render_info->update_events[i] = event;
+			break;
+		}
+	}
+}
+
+void CreateStorageSeekEvent(uint16_t index, EasingFunction easing) {
+	// Only seeks to a cell, does not modify program counter
+	RenderInfo* render_info = &s->render_info;
+	UpdateEvent* event = (UpdateEvent*)malloc(sizeof(UpdateEvent));
+	event->type = STORAGE_SEEK;
+	event->which = index;
+	event->easing = easing;
+	event->percent = 0;
+	event->duration = SLIDE_IN_TIME; 
+	event->start_val = render_info->storage_height;
+	event->end_val = -render_info->cell_height*index - render_info->cell_gap*index + GetScreenHeight() / 2 - render_info->cell_height / 2;
 	for (int i = 0; i < MAX_EVENTS; i++) {
 		if (render_info->update_events[i] == NULL) {
 			render_info->update_events[i] = event;
@@ -223,30 +256,35 @@ void EventFree(UpdateEvent* update_event) {
 void StartVisualisation() {
 	RenderInfo* render_info = &s->render_info;
 	InitWindow(800, 600, "Mini Asm");	
-	int initial_screen_height = GetScreenHeight();
-	render_info->memory_height = initial_screen_height;
 	RenderEvents();
 	CreateMemorySeekEvent(0, IN_N_OUT);
 	RenderEvents();
+	CreateRegisterSeekEvent(render_info->header_gap, IN_N_OUT);
+	RenderEvents();
+	CreateStorageSeekEvent(0, IN_N_OUT);
+	RenderEvents();
+	CreateMemorySeekEvent(1, IN_N_OUT);
+	RenderEvents();
+	CreateMemorySeekEvent(2, IN_N_OUT);
+	RenderEvents();
+	
 }
 
 void plug_update() {
-	RenderInfo* render_info = &s->render_info;
-	int mouse_move = (int)(GetMouseWheelMove()*render_info->scroll_speed);
-	render_info->memory_height -= mouse_move;
-	render_info->pointer.y -= mouse_move;
-	render_info->pointer.y = BoundInt(render_info->pointer.y, 
-		-(render_info->cell_height*MEMORY_SIZE + render_info->cell_gap*MEMORY_SIZE) + GetScreenHeight(), 
-		GetMidPoint() - (render_info->pointer.height - render_info->cell_height) / 2
-	);
-	render_info->memory_height = BoundInt(
-		render_info->memory_height, 
-		-(render_info->cell_height*MEMORY_SIZE + render_info->cell_gap*MEMORY_SIZE) + GetScreenHeight(), GetMidPoint()
-	);
+	// RenderInfo* render_info = &s->render_info;
+	// int mouse_move = (int)(GetMouseWheelMove()*render_info->scroll_speed);
+	// render_info->memory_height -= mouse_move;
+	// render_info->memory_height = BoundInt(
+	//	render_info->memory_height, 
+	//	-(render_info->cell_height*MEMORY_SIZE + render_info->cell_gap*MEMORY_SIZE) + GetScreenHeight()/2, 
+	//	GetMidPoint()
+	// );
+	// render_info->pointer.y = render_info->memory_height - (render_info->pointer.height - render_info->cell_height) / 2;
 	RenderEvents();
 }
 
 void RenderEvents() {
+	RenderFrame();
 	RenderInfo* render_info = &s->render_info;
 	UpdateEvent** update_events = render_info->update_events; 
 	while (!WindowShouldClose()) {
@@ -259,12 +297,17 @@ void RenderEvents() {
 			} else {
 				continue;
 			}
-
 			UpdateEventUpdatePercent(update_event, dt);
 
 			switch (update_event->type) {
+				case REGISTER_SEEK:
+					render_info->register_height = UpdateEventGetCurrentValue(update_event);
+					break;
 				case MEMORY_SEEK:
 					render_info->memory_height = UpdateEventGetCurrentValue(update_event);
+					break;
+				case STORAGE_SEEK:
+					render_info->storage_height = UpdateEventGetCurrentValue(update_event);
 					break;
 				default:
 					fprintf(stderr, "Unexpected update event type %d\n", update_event->type);
@@ -284,11 +327,12 @@ void RenderEvents() {
 void RenderFrame() {
 	RenderInfo* render_info = &s->render_info;
 	char** memory = s->memory;
+	char** storage = s->storage;
 
 	BeginDrawing();
+	ClearBackground(render_info->background);
 	// Memory
 	DrawText("Memory", X_PADDING, render_info->cell_gap, 24, render_info->font_color);
-	ClearBackground(render_info->background);
 	for (int i = 0; i < MEMORY_SIZE; i++) {
 		int y = render_info->memory_height + render_info->cell_height*i + render_info->cell_gap*i;
 		DrawRectangle(
@@ -305,8 +349,50 @@ void RenderFrame() {
 	DrawRectangleLinesEx(render_info->pointer, 2.0F, BLUE); 
 		
 	// Registers
+	float textWidth = MeasureTextEx(GetFontDefault(), "Registers", 24, 1).x;
+	Vector2 position = { .x=GetScreenWidth()/2 - textWidth/2, .y=render_info->cell_gap };
+	DrawTextEx(GetFontDefault(), "registers", position, 24, 1, render_info->font_color);
+	for (int i = 0; i < 10; i++) {
+		RenderRegister(i);
+	}
+	
+
+	// Storage
+	textWidth = MeasureTextEx(GetFontDefault(), "Storage", 24, 1).x;
+	DrawText("Storage", GetScreenWidth() - X_PADDING - textWidth, render_info->cell_gap, 24, render_info->font_color);
+	for (int i = 0; i < STORAGE_SIZE; i++) {
+		int y = render_info->storage_height + render_info->cell_height*i + render_info->cell_gap*i;
+		DrawRectangle(
+			GetScreenWidth() - X_PADDING - render_info->cell_width,
+			y,
+			render_info->cell_width,
+			render_info->cell_height,
+			render_info->cell_color
+		);
+		char* msg = NULL;
+		asprintf(&msg, "Ox%x: %s", i*4, storage[i]);
+		DrawText(msg, GetScreenWidth() - X_PADDING - render_info->cell_width, y+render_info->cell_height/2, 12, render_info->font_color);
+	}
 	
 	EndDrawing();
 }
 
-
+void RenderRegister(int i) {
+	RenderInfo* render_info = &s->render_info;
+	int x = GetScreenWidth() / 2 - (render_info->register_cell_width/2);
+	int y = render_info->register_height + render_info->register_cell_height* 1.15 * i;
+	DrawRectangle(
+		x,
+		y,
+		render_info->register_cell_width,
+		render_info->register_cell_height,
+		render_info->cell_color
+	);
+	char* msg = NULL;
+	asprintf(&msg, "R%d: %d", i, s->registers[i]);
+	if (i == 0) {
+		free(msg);
+		asprintf(&msg, "PC: %d", s->registers[0]);
+	}
+	DrawText(msg, x, y+render_info->register_cell_height/2, 12, render_info->font_color);
+}

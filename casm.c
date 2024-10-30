@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
 	
 	yerp:
 	plug_init(filename);
-	int boxPositionY;
 	while (!WindowShouldClose()) {
 		if (IsKeyPressed(KEY_R)) {
 			state = plug_pre_reload();
