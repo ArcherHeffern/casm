@@ -30,6 +30,7 @@ void ScannerDbg() {
 }
 
 void ScannerAddToken(TokenType token_type) {
+	ScannerDbg();
 	Token* token = &tokens[tokens_added];
 	token->type = token_type;
 	token->literal = &scanner->s[scanner->start];
@@ -43,6 +44,14 @@ void ScannerInit(char* s) {
 	scanner = (Scanner*)malloc(sizeof(Scanner));
 	memset(scanner, 0, sizeof(Scanner));
 	scanner->s = s;
+}
+
+int ScannerTokenLength() {
+	return scanner->cur - scanner->start;
+}
+
+char ScannerGetTokenCharAt(int i) {
+	return scanner->s[scanner->start+i];
 }
 
 void ScannerFree() {
@@ -90,7 +99,7 @@ bool ScannerContainsRegister() {
 }
 
 TokenType ScannerCheckRest(int pos, char* s, int len, TokenType token) {
-	if (scanner->cur - scanner->start - pos != len) {
+	if (ScannerTokenLength() - pos != len) {
 		return TOKEN_LABEL_REF;
 	}
 	if (strncasecmp(&scanner->s[scanner->start+pos], s, len) == 0) {
@@ -100,21 +109,64 @@ TokenType ScannerCheckRest(int pos, char* s, int len, TokenType token) {
 }
 
 TokenType ScannerParseIdentifier() {
-	switch (scanner->s[scanner->start]) {
+	// Very fast! Conceptually a hard coded trie
+	switch (ScannerGetTokenCharAt(0)) {
 		case 'A':
 			return ScannerCheckRest(1, "DD", 2, TOKEN_ADD);
+		case 'B':
+			if (ScannerTokenLength() < 2) {
+				return TOKEN_LABEL_REF;
+			}
+			switch (ScannerGetTokenCharAt(1)) {
+				case 'E':
+					return ScannerCheckRest(2, "Q", 1, TOKEN_BEQ);
+				case 'G':
+					if (ScannerTokenLength() < 3) {
+						return TOKEN_LABEL_REF;
+					}
+					switch (ScannerGetTokenCharAt(2)) {
+						case 'T':
+							return ScannerCheckRest(3, "", 0, TOKEN_BGT);
+						case 'E':
+							return ScannerCheckRest(3, "Q", 1, TOKEN_BGEQ);
+					}
+				case 'L':
+					if (ScannerTokenLength() < 3) {
+						return TOKEN_LABEL_REF;
+					}
+					switch (ScannerGetTokenCharAt(2)) {
+						case 'E':
+							return ScannerCheckRest(3, "Q", 1, TOKEN_BLEQ);
+						case 'T':
+							return ScannerCheckRest(3, "", 0, TOKEN_BLT);
+					}
+				case 'R':
+					return ScannerCheckRest(2, "", 0, TOKEN_BR);
+			}
 		case 'D':
 			return ScannerCheckRest(1, "IV", 2, TOKEN_DIV);
 		case 'I':
 			return ScannerCheckRest(1, "NC", 2, TOKEN_INC);
+		case 'L':
+			return ScannerCheckRest(1, "OAD", 3, TOKEN_LOAD);
 		case 'M':
 			return ScannerCheckRest(1, "UL", 2, TOKEN_MUL);
+		case 'R':
+			return ScannerCheckRest(1, "EAD", 3, TOKEN_READ);
+		case 'S':
+			if (ScannerTokenLength() < 2) {
+				return TOKEN_LABEL_REF;
+			}
+			switch (ScannerGetTokenCharAt(1)) {
+				case 'T':
+					return ScannerCheckRest(2, "ORE", 3, TOKEN_STORE);
+				case 'U':
+					return ScannerCheckRest(2, "B", 1, TOKEN_SUB);
+			}
 		case 'W':
 			return ScannerCheckRest(1, "RITE", 4, TOKEN_WRITE);
-		default:
-			return TOKEN_LABEL_REF;
-			
 	}
+	return TOKEN_LABEL_REF;
 }
 
 void ScannerScanIdentifier() {
@@ -195,7 +247,7 @@ int label_lines[MAX_LABELS];
 
 int main() {
 	char* lines[] = {
-		"R1 ADD DIV INC MUL flub MULflub R2 R3 23048 hi",
+		"WRITE WRRITE STORE SUB STTORE SUBB BLEQ BLT BR BLEQQ BLTT BRR BGT BGEQ BGEQQ R1 ADD DIV INC MUL flub MULflub R2 R3 23048 hi",
 		"LABEL: LOAD R1, R2",
 		"BLT LABEL",
 	};
