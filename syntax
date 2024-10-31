@@ -1,0 +1,32 @@
+LABEL:
+LITERAL
+REGISTER
+
+LOAD Ri, Addr
+LOAD Ri, =Num
+LOAD Ri, [Addr, Rj]
+LOAD Ri, @Addr
+LOAD Ri, $Num
+
+STORE Ri, Addr
+STORE Ri, [Addr, Rj]
+STORE Ri, $Num
+
+READ Ri, Addr
+READ Ri, [Addr, Rj]
+
+WRITE Ri, Addr
+WRITE Ri, [Addr, Rj]
+
+ADD Ri, Rj
+SUB Ri, Rj
+MUL Ri, Rj
+DIV Ri, Rj
+INC Ri
+
+BR Label
+BLT Ri, Rj, Label
+BGT Ri, Rj, Label
+BLEQ Ri, Rj, Label
+BGEQ Ri, Rj, Label
+BEQ Ri, Rj, Label
