@@ -28,6 +28,7 @@ typedef enum OverrideType OverrideType;
 #define SLIDE_IN_TIME 0.5 // Seconds
 #define MEMORY_CELL_SET_VALUE_TIME 1
 #define X_PADDING 40
+#define CELL_EXPAND_PERCENT 1.2
 
 struct RenderInfo {
 	Color background;
@@ -78,7 +79,9 @@ struct Animation {
 
 enum OverrideType {
 	NONE,
-	MEMORY_CELL_SIZE_MULTIPLIER
+	MEMORY_CELL_SIZE_MULTIPLIER,
+	REGISTER_FADE,
+	STORAGE_CELL_SIZE_MULTIPLIER
 };
 
 struct StyleOverride {
@@ -93,12 +96,10 @@ void AnimationDbg(Animation* a) {
 
 struct State {
 	RenderInfo render_info;
-	int registers[10];
+	int* registers[10];
 	char* memory[MEMORY_SIZE];
 	char* storage[STORAGE_SIZE];
 };
-
-
 
 // ============
 // Plugins
@@ -134,6 +135,8 @@ void AnimationFree(Animation* animation);
 void SetActiveMemoryCell(int cell, EasingFunction easing, float delay);
 void SetActiveStorageCell(int cell, EasingFunction easing, float delay);
 void SetMemoryCellValue(int cell, char* value, float delay);
+void SetRegisterCellValue(int cell, int value, float delay);
+void SetStorageCellValue(int cell, char* value, float delay);
 
 // ============
 // Runners
@@ -157,11 +160,20 @@ void RenderStorageCell(int i);
 void RenderControls();
 
 // ============
+// User Action Handlers
+// ============
+char* ErrorMsg = NULL;
+void HandleFileUpload();
+void HandleKeyPresses();
+void ContinueProgram();
+bool StepProgram(); // True if program is finished or errored. Sets char* ErrorMsg on error
+float ResetState();
+
+// ============
 // Misc
 // ============
 float GetMidPoint();
-void HandleFileUpload();
-uint16_t LoadFileIntoMemory(char* filepath, char* memory[]);
+uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool animate);
 
 // ============
 // Utilities
@@ -236,6 +248,10 @@ void plug_init(char* filename) {
 	s = malloc(sizeof(State));
 	assert(s != NULL);
 	memset(s, 0, sizeof(State));
+	for (int i = 0; i < 10; i++) {
+		s->registers[i] = (int*)malloc(sizeof(int));
+		*s->registers[i] = 0;
+	}
 	s->render_info = render_info;
 	float mid_y = GetMidPoint() - (s->render_info.memory_pointer.height - s->render_info.cell_height) / 2;
 	s->render_info.memory_pointer.y = mid_y;
@@ -243,7 +259,7 @@ void plug_init(char* filename) {
 
 	s->render_info.storage_pointer.y = mid_y;
 	s->render_info.storage_pointer.x = GetScreenWidth() - X_PADDING - (s->render_info.storage_pointer.width - s->render_info.cell_width) / 2 - s->render_info.cell_width;
-	LoadFileIntoMemory(filename, s->memory);
+	LoadFileIntoMemory(filename, s->memory, 0, false);
 
 	StartVisualisation();
 }
@@ -421,7 +437,28 @@ void SetMemoryCellValue(int cell, char* value, float delay) {
 
 	// Grow and shrink cell by a percent
 	StyleOverride* style_override = StyleOverrideCreate(MEMORY_CELL_SIZE_MULTIPLIER, cell, 1);
-	CreateAnimation(1.2, &style_override->style, IN_N_BACK, 1, 0, style_override);
+	CreateAnimation(CELL_EXPAND_PERCENT, &style_override->style, IN_N_BACK, 1, delay, style_override);
+}
+
+void SetStorageCellValue(int cell, char* value, float delay) {
+	// Set text after delay
+	CreateFuture(delay, (void*)&s->storage[cell], value);
+
+	// Grow and shrink cell by a percent
+	StyleOverride* style_override = StyleOverrideCreate(STORAGE_CELL_SIZE_MULTIPLIER, cell, 1);
+	CreateAnimation(CELL_EXPAND_PERCENT, &style_override->style, IN_N_BACK, 1, delay, style_override);
+
+}
+void SetRegisterCellValue(int cell, int value, float delay) {
+	int* i = (int*)malloc(sizeof(int)); // TODO: Fix leak - Idea: Callback on future completions
+	*i=value;
+	float duration = 1;
+	// Set text after delay
+	CreateFuture(delay+duration/2, (void*)&s->registers[cell], i);
+
+	// Fade text
+	StyleOverride* style_override = StyleOverrideCreate(REGISTER_FADE, cell, 1);
+	CreateAnimation(0, &style_override->style, IN_N_BACK, duration, delay, style_override);
 }
 
 // ============
@@ -434,8 +471,9 @@ void StartVisualisation() {
 	Render();
 	SetActiveMemoryCell(0, IN_N_OUT, 0);
 	Run();
+	int gap = render_info->register_cell_height * render_info->register_cell_gap;
 	CreateAnimation(
-		GetScreenHeight() - 10*(render_info->register_cell_height + render_info->register_cell_gap),
+		GetScreenHeight() - 10*(render_info->register_cell_height + gap) - 7,
 		&render_info->register_height,
 		IN_N_OUT,
 		SLIDE_IN_TIME,
@@ -445,26 +483,20 @@ void StartVisualisation() {
 	Run();
 	SetActiveStorageCell(0, IN_N_OUT, 0);
 	Run();
-	SetMemoryCellValue(0, "Goodbye World", 0);
-	Run();
+	return;
 	SetActiveMemoryCell(1, IN_N_OUT, 0);
 	Run();
-	SetActiveMemoryCell(2, IN_N_OUT, 0);
+	SetActiveMemoryCell(0, IN_N_OUT, 0);
 	Run();
-	SetActiveMemoryCell(3, IN_N_BACK, 0);
+	SetActiveMemoryCell(3, IN_N_OUT, 0);
+	Run();
+	SetStorageCellValue(0, "Goodbye World", 0);
+	Run();
+	SetRegisterCellValue(0, 100, 0);
+	Run();
+	SetMemoryCellValue(0, "Goodbye World", 0);
 	Run();
 	return;
-	Run();
-	// CreateRegisterSeekEvent(render_info->register_cell_height+, IN_N_OUT);
-	CreateAnimation(
-		0, 
-		&render_info->storage_height, 
-		IN_N_OUT,
-		SLIDE_IN_TIME,
-		0,
-		NULL
-	);
-	Run();
 }
 
 void Run() {
@@ -479,6 +511,7 @@ bool Step() {
 	bool animations_left = StepAnimations();
 	bool futures_left = StepFutures();
 	HandleFileUpload();
+	HandleKeyPresses();
 	Render();
 	return animations_left || futures_left;
 }
@@ -584,7 +617,12 @@ void RenderRegisters() {
 void RenderRegister(int i) {
 	RenderInfo* render_info = &s->render_info;
 	int x = GetScreenWidth() / 2 - (render_info->register_cell_width/2);
-	int y = render_info->register_height + render_info->register_cell_height* (1+render_info->register_cell_gap) * (i-1) - 20;
+	int gap = render_info->register_cell_height*render_info->register_cell_gap;
+	int y = render_info->register_height + i*(render_info->register_cell_height+gap);
+	double* maybe_fade = StyleOverrideGet(REGISTER_FADE, i);
+	double fade = maybe_fade == NULL ? 1: *maybe_fade;
+	Color faded_color = Fade(render_info->font_color, fade);
+
 	DrawRectangle(
 		x,
 		y,
@@ -593,12 +631,12 @@ void RenderRegister(int i) {
 		render_info->cell_color
 	);
 	char* msg = NULL;
-	asprintf(&msg, "R%d: %d", i, s->registers[i]);
+	asprintf(&msg, "R%d: %d", i, *s->registers[i]);
 	if (i == 0) {
 		free(msg);
-		asprintf(&msg, "PC: %d", s->registers[0]);
+		asprintf(&msg, "PC: %d", *s->registers[0]);
 	}
-	DrawText(msg, x+20, y+render_info->register_cell_height/2, TEXT_SIZE, render_info->font_color);
+	DrawText(msg, x+20, y+render_info->register_cell_height/2, TEXT_SIZE, faded_color);
 }
 
 void RenderStorage() {
@@ -618,12 +656,14 @@ void RenderStorageCell(int i) {
 	RenderInfo* render_info = &s->render_info;
 	char** storage = s->storage;
 	int y = render_info->storage_height + render_info->cell_height*i + render_info->cell_gap*i;
+	double* maybe_multiplier = StyleOverrideGet(STORAGE_CELL_SIZE_MULTIPLIER, i);
+	double multiplier = maybe_multiplier == NULL ? 1: *maybe_multiplier;
 
 	DrawRectangle(
-		GetScreenWidth() - X_PADDING - render_info->cell_width,
-		y,
-		render_info->cell_width,
-		render_info->cell_height,
+		GetScreenWidth() - X_PADDING - render_info->cell_width - 0.5 * (render_info->cell_width * multiplier - render_info->cell_width),
+		y - 0.5 * (render_info->cell_height * multiplier - render_info->cell_height),
+		render_info->cell_width * multiplier,
+		render_info->cell_height * multiplier,
 		render_info->cell_color
 	);
 	char* msg = NULL;
@@ -677,10 +717,10 @@ void RenderControls() {
 		render_info->font_color
 	);
 }
-// ============
-// Misc
-// ============
 
+// ============
+// User Action Handlers
+// ============
 void HandleFileUpload() {
 	if (!IsFileDropped()) {
 		return;
@@ -688,18 +728,53 @@ void HandleFileUpload() {
 	FilePathList files = LoadDroppedFiles();
 	assert(files.count > 0 && "Expected a file to be uploaded");
 	char* file_path = files.paths[0];
-	LoadFileIntoMemory(file_path, s->memory);
+	
+	ResetState();
+	LoadFileIntoMemory(file_path, s->memory, CELL_EXPAND_PERCENT, true);
 	UnloadDroppedFiles(files);
 }
 
-void ResetState() {
-	SetActiveMemoryCell(0, IN_N_OUT, 0);
-	SetActiveStorageCell(0, IN_N_OUT, 0);
-	// TODO: Go booop boop boop each cell that now has a value and removed a value (Memory and Storage)
-	// TODO: Reset the registers one after another
+void HandleKeyPresses() {
+	if (IsKeyPressed(KEY_T)) {
+		ResetState();
+	}
+	if (IsKeyPressed(KEY_C)) {
+		ContinueProgram();
+	}
+	if (IsKeyPressed(KEY_S)) {
+		StepProgram();
+	}
 }
 
-uint16_t LoadFileIntoMemory(char* filepath, char* memory[]) {
+float ResetState() {
+	SetActiveMemoryCell(0, IN_N_OUT, 0);
+	SetActiveStorageCell(0, IN_N_OUT, 0);
+	for (int i = 0; i < 4; i++) {
+		SetMemoryCellValue(i, "000000", i*RESET_DELAY);
+		SetStorageCellValue(i, "000000", i*RESET_DELAY);
+	}
+	for (int i = 0; i < 10; i++) {
+		SetRegisterCellValue(i, 0, i*RESET_DELAY);
+	}
+	return 10 * RESET_DELAY;
+}
+
+void ContinueProgram() {
+	while (!StepProgram()){
+		sleep(1);
+	}
+}
+bool StepProgram() {
+	printf("Step\n");
+	return false;
+}
+
+// ============
+// Misc
+// ============
+
+
+uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool animate) {
 	if (filepath == NULL) {
 		return 0;
 	}
@@ -718,7 +793,12 @@ uint16_t LoadFileIntoMemory(char* filepath, char* memory[]) {
 		if (n_read <= 0) {
 			break;
 		}
-		memory[lines++] = linep;
+		if (animate) {
+			SetMemoryCellValue(lines, linep, delay + RESET_DELAY*lines);
+		} else {
+			s->memory[lines] = linep;
+		}
+		lines++;
 	}
 	return lines;
 }
