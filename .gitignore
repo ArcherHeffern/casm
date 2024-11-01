@@ -2,6 +2,6 @@ raylib-5.0_macos
 main_hmr
 casm
 libplug.so
-interpreter
+lexer
 out
 preprocess

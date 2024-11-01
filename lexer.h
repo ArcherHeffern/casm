@@ -38,6 +38,7 @@ enum TokenType {
 	TOKEN_REGISTER,
 	TOKEN_NUMBER,
 
+	TOKEN_HALT,
 	TOKEN_END
 };
 

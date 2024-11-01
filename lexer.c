@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "interpreter.h"
+#include "lexer.h"
+#include "util.h"
 
 typedef struct Scanner Scanner;
 struct Scanner {
@@ -24,8 +25,6 @@ char ScannerGetTokenCharAt(int i);
 bool ScannerAtEnd();
 Token* TokenInit(TokenType type, char* literal, int length);
 void TokenFree(Token* token);
-bool IsDigit(char c);
-bool IsAlpha(char c);
 void ScannerScanNumber();
 bool ScannerContainsRegister();
 TokenType ScannerCheckRest(int pos, char* s, int len, TokenType token);
@@ -113,14 +112,6 @@ void TokensPrint(Token** tokens) {
 	}
 }
 
-bool IsDigit(char c) {
-	return c <='9' && c >= '0';
-}
-
-bool IsAlpha(char c) {
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
 void ScannerScanNumber() {
 	while (!ScannerAtEnd() && IsDigit(ScannerPeek())) {
 		ScannerAdvance();
@@ -181,6 +172,8 @@ TokenType ScannerParseIdentifier() {
 			}
 		case 'D':
 			return ScannerCheckRest(1, "IV", 2, TOKEN_DIV);
+		case 'H':
+			return ScannerCheckRest(1, "ALT", 3, TOKEN_HALT);
 		case 'I':
 			return ScannerCheckRest(1, "NC", 2, TOKEN_INC);
 		case 'L':
@@ -243,8 +236,8 @@ Token** TokenizeLine(char* s) {
 	}
 	num_tokens = 0;
 
+	ScannerSkipWhitespace();
 	while (!ScannerAtEnd()) {
-		ScannerSkipWhitespace();
 		char c = ScannerAdvance();
 		switch (c) {
 			case '=':
@@ -276,6 +269,7 @@ Token** TokenizeLine(char* s) {
 					return NULL;
 				}
 		}
+	ScannerSkipWhitespace();
 	}
 	
 	ScannerAddToken(TOKEN_END);
@@ -295,9 +289,12 @@ void TokenListFree(Token** tokens) {
 	TokenFree(tokens[i]);
 }
 
+
+/*
 int main() {
 	char* lines[] = {
-		"WRITE WRRITE STORE SUB STTORE SUBB BLEQ BLT BR BLEQQ BLTT BRR BGT BGEQ BGEQQ R1 ADD DIV INC MUL flub MULflub R2 R3 23048 hi",
+		"BR HELLO",
+		"WRITE WRRITE STORE SUB STTORE SUBB BLEQ BLT BR BLEQQ BLTT BRR BGT BGEQ BGEQQ R1 ADD DIV INC MUL flub MULflub R2 R3 23048 hi HALT",
 		"LABEL: LOAD R1, R2",
 		"BLT LABEL",
 	};
@@ -306,3 +303,5 @@ int main() {
 	TokensPrint(tokens);
 	TokenListFree(tokens);
 }
+
+*/
