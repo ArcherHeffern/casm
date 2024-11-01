@@ -38,7 +38,7 @@ int Preprocess(char** lines, int num_lines, char** label_names, int* label_locat
 				for (int j = 0; j < num_labels; j++) {
 					if (strcasecmp(label_names[j], label_name) == 0) {
 						error_msg = malloc(64);
-						asprintf(&error_msg, "Found duplicate labels on lines %d and %d", j, i);
+						asprintf(&error_msg, "Found duplicate labels on lines %d and %d", label_locations[j], i);
 						return -1;
 					}
 				}
@@ -62,12 +62,13 @@ int Preprocess(char** lines, int num_lines, char** label_names, int* label_locat
 }
 
 int main() {
-	int num_lines = 4;
+	int num_lines = 5;
 	char* lines[] = {
 		"L1: hello world",
 		"jdskfjsdf",
 		"jdskfjsdf dfj",
-		"jdskfjsdf:",
+		"jdskfjsdf: a",
+		"jdskfjsdf: a",
 	};
 	char* label_names[4];
 	int label_locations[4];
