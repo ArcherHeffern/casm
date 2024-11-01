@@ -793,6 +793,7 @@ uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool an
 		if (n_read <= 0) {
 			break;
 		}
+		linep[n_read-1] = '\0';
 		if (animate) {
 			SetMemoryCellValue(lines, linep, delay + RESET_DELAY*lines);
 		} else {
