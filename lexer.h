@@ -5,15 +5,8 @@
 #include <stdbool.h>
 #define MAX_TOKENS 16
 
-typedef struct Scanner Scanner;
 typedef struct Token Token;
 typedef enum TokenType TokenType;
-
-struct Scanner {
-	char* s;
-	int start;
-	int cur;
-};
 
 enum TokenType {
 	TOKEN_EQUAL,
@@ -54,15 +47,9 @@ struct Token {
 	int length; // Length of actual string
 };
 
-
-char ScannerAdvance();
-void ScannerAddToken(TokenType token_type);
-void ScannerInit(char* s);
-void ScannerFree();
-bool ScannerAtEnd();
-
+Token** TokenizeLine(char* s);
+void TokenListFree(Token** tokens);
 void TokenDbg(Token* token);
-void TokensPrint();
-void Tokenize();
+void TokensPrint(Token** tokens);
 
 #endif // TEST_H_

@@ -6,10 +6,42 @@
 
 #include "interpreter.h"
 
-Token tokens[MAX_TOKENS];
-size_t tokens_added;
+typedef struct Scanner Scanner;
+struct Scanner {
+       char* s;
+       int start;
+       int cur;
+};
+
+void ScannerInit(char* s);
+void ScannerFree();
+char ScannerAdvance();
+char ScannerPeek();
+void ScannerDbg();
+void ScannerAddToken(TokenType token_type);
+int ScannerTokenLength();
+char ScannerGetTokenCharAt(int i);
+bool ScannerAtEnd();
+Token* TokenInit(TokenType type, char* literal, int length);
+void TokenFree(Token* token);
+bool IsDigit(char c);
+bool IsAlpha(char c);
+void ScannerScanNumber();
+bool ScannerContainsRegister();
+TokenType ScannerCheckRest(int pos, char* s, int len, TokenType token);
+TokenType ScannerParseIdentifier();
+void ScannerScanIdentifier();
+void ScannerSkipWhitespace();
+
+Token* tokens[MAX_TOKENS];
+size_t num_tokens;
 Scanner* scanner = NULL;
 
+void ScannerInit(char* s) {
+	scanner = (Scanner*)malloc(sizeof(Scanner));
+	memset(scanner, 0, sizeof(Scanner));
+	scanner->s = s;
+}
 
 char ScannerAdvance() {
 	scanner->cur++;
@@ -30,21 +62,12 @@ void ScannerDbg() {
 }
 
 void ScannerAddToken(TokenType token_type) {
-	ScannerDbg();
-	Token* token = &tokens[tokens_added];
-	token->type = token_type;
-	token->literal = &scanner->s[scanner->start];
-	token->length = scanner->cur-scanner->start;
+	Token* token = TokenInit(token_type,&scanner->s[scanner->start], scanner->cur-scanner->start);
 	scanner->start = scanner->cur;
 	scanner->cur = scanner->start;
-	tokens_added++;
+	tokens[num_tokens++] = token;
 }
 
-void ScannerInit(char* s) {
-	scanner = (Scanner*)malloc(sizeof(Scanner));
-	memset(scanner, 0, sizeof(Scanner));
-	scanner->s = s;
-}
 
 int ScannerTokenLength() {
 	return scanner->cur - scanner->start;
@@ -71,9 +94,22 @@ void TokenDbg(Token* token) {
 	);
 }
 
-void TokensPrint() {
-	for (int i = 0; i < tokens_added; i++) {
-		TokenDbg(&tokens[i]);
+Token* TokenInit(TokenType type, char* literal, int length) {
+	Token* token = (Token*)malloc(sizeof(Token));
+	token->type = type;
+	token->literal = literal;
+	token->length = length;
+	return token;
+}
+
+void TokenFree(Token* token) {
+	free(token);
+}
+
+void TokensPrint(Token** tokens) {
+	int i = 0; 
+	while (tokens[i]->type != TOKEN_END) {
+		TokenDbg(tokens[i++]);
 	}
 }
 
@@ -200,7 +236,13 @@ void ScannerSkipWhitespace() {
 	}
 }
 
-void Tokenize() {
+Token** TokenizeLine(char* s) {
+	ScannerInit(s);
+	for (int i = 0; i < num_tokens; i++) {
+		tokens[i] = NULL;
+	}
+	num_tokens = 0;
+
 	while (!ScannerAtEnd()) {
 		ScannerSkipWhitespace();
 		char c = ScannerAdvance();
@@ -230,20 +272,28 @@ void Tokenize() {
 				else if (IsAlpha(c)) {
 					ScannerScanIdentifier();
 				} else {
-					printf("Unexpected Token");
-					return;
+					printf("Unexpected Token '%c'\n", c);
+					return NULL;
 				}
 		}
 	}
+	
+	ScannerAddToken(TOKEN_END);
+	ScannerFree();
+	Token** token_list = (Token**)malloc(sizeof(Token*)*num_tokens);
+	for (int i = 0; i < num_tokens; i++) {
+		token_list[i] = tokens[i];
+	}
+	return token_list;
 }
 
-void Preprocess(char** lines) {
-	// Handle Labels
+void TokenListFree(Token** tokens) {
+	int i = 0; 
+	while (tokens[i]->type != TOKEN_END) {
+		TokenFree(tokens[i++]);
+	}
+	TokenFree(tokens[i]);
 }
-
-#define MAX_LABELS 8
-char* label_names[MAX_LABELS];
-int label_lines[MAX_LABELS];
 
 int main() {
 	char* lines[] = {
@@ -251,27 +301,8 @@ int main() {
 		"LABEL: LOAD R1, R2",
 		"BLT LABEL",
 	};
-	Preprocess(lines);
 	char* s = lines[0];
-	// s = "5[]$=100=,10";
-	ScannerInit(s);
-	Tokenize();
-	printf("Tokens added: %zu\n", tokens_added);
-	TokensPrint();
-
-	// Cleanup
-	ScannerFree();
-	/*
-		FILE* f = fopen("test.a", "r");
-		size_t s = 64;
-		char* token = NULL;
-		char* line = malloc(s);
-		getline(&line, &s, f);
-		token = strsep(&line, " ");
-		printf("%s\n", token);
-
-		if (eq(token, "ADD")) {
-		} else if (eq(token, "SUB")) {
-		}
-	*/	
+	Token** tokens = TokenizeLine(s);
+	TokensPrint(tokens);
+	TokenListFree(tokens);
 }
