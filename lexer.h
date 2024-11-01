@@ -7,6 +7,7 @@
 
 typedef struct Token Token;
 typedef enum TokenType TokenType;
+typedef struct TokenList TokenList;
 
 enum TokenType {
 	TOKEN_EQUAL,
@@ -39,8 +40,10 @@ enum TokenType {
 	TOKEN_NUMBER,
 
 	TOKEN_HALT,
-	TOKEN_END
+	TOKEN_NONE
 };
+
+extern char* TokenTypeToString[];
 
 struct Token {
 	TokenType type;
@@ -48,9 +51,14 @@ struct Token {
 	int length; // Length of actual string
 };
 
-Token** TokenizeLine(char* s);
-void TokenListFree(Token** tokens);
+struct TokenList {
+	Token** tokens;
+	int size;
+};
+
+TokenList* TokenizeLine(char* s);
+void TokenListFree(TokenList* token_list);
 void TokenDbg(Token* token);
-void TokensPrint(Token** tokens);
+void TokenListPrint(TokenList* token_list);
 
 #endif // TEST_H_

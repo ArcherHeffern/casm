@@ -14,6 +14,40 @@ struct Scanner {
        int cur;
 };
 
+char* TokenTypeToString[] = {
+	"TOKEN_EQUAL",
+	"TOKEN_R_BRACKET",
+	"TOKEN_L_BRACKET",
+	"TOKEN_AT",
+	"TOKEN_DOLLAR",
+	"TOKEN_COMMA",
+
+	"TOKEN_LOAD",
+	"TOKEN_STORE",
+	"TOKEN_READ",
+	"TOKEN_WRITE",
+
+	"TOKEN_ADD",
+	"TOKEN_SUB",
+	"TOKEN_MUL",
+	"TOKEN_DIV",
+	"TOKEN_INC",
+
+	"TOKEN_BR",
+	"TOKEN_BLT",
+	"TOKEN_BGT",
+	"TOKEN_BLEQ",
+	"TOKEN_BGEQ",
+	"TOKEN_BEQ",
+
+	"TOKEN_LABEL_REF",
+	"TOKEN_REGISTER",
+	"TOKEN_NUMBER",
+
+	"TOKEN_HALT",
+	"TOKEN_NONE"
+};
+
 void ScannerInit(char* s);
 void ScannerFree();
 char ScannerAdvance();
@@ -105,10 +139,9 @@ void TokenFree(Token* token) {
 	free(token);
 }
 
-void TokensPrint(Token** tokens) {
-	int i = 0; 
-	while (tokens[i]->type != TOKEN_END) {
-		TokenDbg(tokens[i++]);
+void TokenListPrint(TokenList* token_list) {
+	for (int i = 0; i < token_list->size; i++) {
+		TokenDbg(token_list->tokens[i]);
 	}
 }
 
@@ -229,7 +262,7 @@ void ScannerSkipWhitespace() {
 	}
 }
 
-Token** TokenizeLine(char* s) {
+TokenList* TokenizeLine(char* s) {
 	ScannerInit(s);
 	for (int i = 0; i < num_tokens; i++) {
 		tokens[i] = NULL;
@@ -272,21 +305,22 @@ Token** TokenizeLine(char* s) {
 	ScannerSkipWhitespace();
 	}
 	
-	ScannerAddToken(TOKEN_END);
 	ScannerFree();
-	Token** token_list = (Token**)malloc(sizeof(Token*)*num_tokens);
+	Token** internal_token_list = (Token**)malloc(sizeof(Token*)*num_tokens);
 	for (int i = 0; i < num_tokens; i++) {
-		token_list[i] = tokens[i];
+		internal_token_list[i] = tokens[i];
 	}
+	TokenList* token_list = (TokenList*)malloc(sizeof(TokenList));
+	token_list->tokens = internal_token_list;
+	token_list->size = num_tokens;
 	return token_list;
 }
 
-void TokenListFree(Token** tokens) {
-	int i = 0; 
-	while (tokens[i]->type != TOKEN_END) {
-		TokenFree(tokens[i++]);
+void TokenListFree(TokenList* token_list) {
+	for (int i = 0; i < token_list->size; i++) {
+		TokenFree(token_list->tokens[i]);
 	}
-	TokenFree(tokens[i]);
+	free(token_list);
 }
 
 
@@ -299,9 +333,9 @@ int main() {
 		"BLT LABEL",
 	};
 	char* s = lines[0];
-	Token** tokens = TokenizeLine(s);
-	TokensPrint(tokens);
-	TokenListFree(tokens);
+	TokenList* token_list = TokenizeLine(s);
+	TokenListPrint(token_list);
+	TokenListFree(token_list);
 }
-
 */
+

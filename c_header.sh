@@ -2,4 +2,4 @@
 
 set -euo pipefail
 
-ggrep -P '^\w+\s+\w+\([^)]*\)\s*{' $1 | sed -Ee 's/ *{/\;/'
+ggrep -P '^\w+\**\s+\w+\([^)]*\)\s*{' $1 | sed -Ee 's/ *{/\;/'
