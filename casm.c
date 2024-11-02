@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "preprocess.h"
 #include "lexer.h"
+#include "util.h"
 
 #define MAX_LABELS 16
 
@@ -311,13 +312,14 @@ int GetMemory(int address) {
 		return 0;
 	}
 	char* line = memory[address/4];
-	if (line == NULL) {
+	int contents = 0;
+	if (line == NULL || !ToInteger(line, &contents)) {
 		char* error_msg = malloc(64);
-		asprintf(&error_msg, "Garbage contained at memory address: 0x%d", address);
+		asprintf(&error_msg, "Cannot read memory address %d since it contains garbage or a non positive integer: '%s'", address, line);
 		SetErrorMsg(error_msg);
 		return 0;
 	}
-	return atoi(line);
+	return contents;
 }
 
 
@@ -373,13 +375,18 @@ int main() {
 		"HALT"
 	};
 	*/
-	memory[20] = "17";
+
+	memory[20] = "32";
 	char* lines[] = {
 		"LOAD R1, =12",
 		"LOAD R2, R1",
-		"LOAD R3, [68, R1]",
+		"LOAD R3, [68, R1]", // Expect 16
+		"LOAD R4, =80",
+		"LOAD R5, @R4", // Expect 21
+		"LOAD R6, $R1", // Expect 21
 		"ADD R1, R2",
-		"HALT"
+		"HALT",
+		"21"
 	};
 	int num_lines = sizeof(lines)/sizeof(char*);
 	char* label_names[MAX_LABELS];
@@ -397,7 +404,7 @@ int main() {
 	while (StepProgram()) {}
 	if (casm_error) {
 		int pc = registers[0]-1;
-		printf("Error on line 0x%X: %s\n", pc*4, casm_error);
+		printf("Error at address %d: %s\n", pc*4, casm_error);
 		printf("%s\n\n", lines[pc]);
 	}
 	PrintRegisters();

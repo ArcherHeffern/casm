@@ -8,5 +8,6 @@ bool IsWhitespace(char c);
 bool IsDigit(char c);
 bool IsNonZeroDigit(char c);
 bool IsAlpha(char c);
+bool ToInteger(char* s, int* i);
 
 #endif
