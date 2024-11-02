@@ -14,6 +14,8 @@ struct Scanner {
        int cur;
 };
 
+char* lexer_error = NULL;
+
 char* TokenTypeToString[] = {
 	"TOKEN_EQUAL",
 	"TOKEN_R_BRACKET",
@@ -264,6 +266,10 @@ void ScannerSkipWhitespace() {
 
 TokenList* TokenizeLine(char* s) {
 	ScannerInit(s);
+	if (lexer_error) {
+		free(lexer_error);
+		lexer_error = NULL;
+	}
 	for (int i = 0; i < num_tokens; i++) {
 		tokens[i] = NULL;
 	}
@@ -292,13 +298,13 @@ TokenList* TokenizeLine(char* s) {
 					ScannerAddToken(TOKEN_COMMA);
 					break;
 			default:
-				if (IsNonZeroDigit(c)) {
+				if (IsDigit(c)) {
 					ScannerScanNumber();
 				}
 				else if (IsAlpha(c)) {
 					ScannerScanIdentifier();
 				} else {
-					printf("Unexpected Token '%c'\n", c);
+					asprintf(&lexer_error, "Unexpected Token '%c'\n", c);
 					return NULL;
 				}
 		}

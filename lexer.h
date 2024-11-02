@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #define MAX_TOKENS 16
 
+extern char* lexer_error;
+
 typedef struct Token Token;
 typedef enum TokenType TokenType;
 typedef struct TokenList TokenList;
