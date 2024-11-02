@@ -2,11 +2,14 @@ LABEL:
 LITERAL
 REGISTER
 
-LOAD Ri, Addr
-LOAD Ri, =Num
-LOAD Ri, [Addr, Rj]
-LOAD Ri, @Addr
-LOAD Ri, $Num
+<number> ::= NUMBER
+<register> ::= R<number>
+
+LOAD <register>, <register>
+LOAD <register>, =<number>
+LOAD <register>, [<number>, <register>]
+LOAD <register>, @<register>
+LOAD <register>, $<register>
 
 STORE Ri, Addr
 STORE Ri, [Addr, Rj]

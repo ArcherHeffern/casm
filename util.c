@@ -8,6 +8,10 @@ bool IsDigit(char c) {
 	return c <='9' && c >= '0';
 }
 
+bool IsNonZeroDigit(char c) {
+	return c <='9' && c >= '1';
+}
+
 bool IsAlpha(char c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }

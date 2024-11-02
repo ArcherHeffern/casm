@@ -6,6 +6,7 @@
 bool IsAlpha(char c);
 bool IsWhitespace(char c);
 bool IsDigit(char c);
+bool IsNonZeroDigit(char c);
 bool IsAlpha(char c);
 
 #endif

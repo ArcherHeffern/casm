@@ -8,22 +8,23 @@
 int registers[10] = { 0 };
 char* memory[64] = { NULL };
 char* storage[64] = { NULL };
+bool haltflag = false;
 
 char* casm_error = NULL;
-
-typedef struct RegisterPair {
-	int first;
-	int second;
-} RegisterPair;
 
 typedef struct Scanner {
 	TokenList* token_list;
 	int cur;
 } Scanner;
 
+typedef struct Register {
+	int index;
+	int value;
+} Register;
+
 // Entry Points
 bool StepProgram();
-bool ExecuteInstruction(Scanner* scanner);
+void ExecuteInstruction(Scanner* scanner);
 // Scanner
 Token* Advance(Scanner* scanner);
 Token* Check(Scanner* scanner, TokenType token_type);
@@ -32,18 +33,23 @@ Token* Peek(Scanner* scanner);
 Token* Prev(Scanner* scanner);
 bool IsAtEnd(Scanner* scanner);
 // Executors
-RegisterPair* ParseRegisterPair(Scanner* scanner);
-bool ExecuteLoad(Scanner* scanner);
-int ResolveDirectAddress();
-int ResolveImmediateAddress();
-int ResolveIndexAddress();
-int ResolveIndirectAddress();
-int ResolveLoadAddress();
-int ResolveRelativeAddress();
+void ExecuteLoad(Scanner* scanner);
+void ExecuteMath(TokenType instruction, Scanner* scanner);
+int ResolveDirectAddress(Scanner* scanner);
+int ResolveImmediateAddress(Scanner* scanner);
+int ResolveIndexAddress(Scanner* scanner);
+int ResolveIndirectAddress(Scanner* scanner);
+int ResolveLoadValue(Scanner* scanner);
+int ResolveRelativeAddress(Scanner* scanner);
+// Helpers
+Register GetRegister(Scanner* scanner);
+int GetNumberNumber(Scanner* scanner);
+int GetMemory(int address);
 // Setters
 void SetRegister(int num, int value);
 void SetMemory(int num, char* value, bool set_focused);
 void SetStorage(int num, char* value);
+void SetErrorMsg(char* msg);
 // Debug Info
 void PrintRegisters();
 // Main
@@ -54,57 +60,64 @@ int main();
 // Entry Points
 // ============
 bool StepProgram() {
-	TokenList* token_list = TokenizeLine(memory[registers[0]++]);
+	char* line = memory[registers[0]++];
+	if (!line) {
+		char* error_msg = malloc(64);
+		asprintf(&error_msg, "Expected instruction but found garbage");
+		SetErrorMsg(error_msg);
+		return false;
+	}
+	TokenList* token_list = TokenizeLine(line);
 	TokenListPrint(token_list);
-	Scanner scanner;
-	scanner.token_list = token_list;
-	scanner.cur = 0;
+	printf("\n");
+	Scanner scanner = { token_list, 0 };
 
-	bool can_continue = ExecuteInstruction(&scanner);
+	ExecuteInstruction(&scanner);
 
 	TokenListFree(token_list);
+
+	bool can_continue = !casm_error && !haltflag;
 	return can_continue;
 }
 
-bool ExecuteInstruction(Scanner* scanner) {
+void ExecuteInstruction(Scanner* scanner) {
 	TokenType instruction = Advance(scanner)->type;
 	switch (instruction) {
 		case TOKEN_LOAD:
-			if (!ExecuteLoad(scanner)) {
-				return false;
-			}
+			ExecuteLoad(scanner);
+			break;
+		case TOKEN_HALT:
+			haltflag = true;
+			break;
 		case TOKEN_ADD:
 		case TOKEN_SUB:
 		case TOKEN_MUL:
-		case TOKEN_DIV: {
-			RegisterPair* rp = ParseRegisterPair(scanner);
-			if (rp == NULL) {
-				return false;
-			}
-			int first_val = registers[rp->first];
-			int second_val = registers[rp->second];
-			int result;
-			if (instruction == TOKEN_ADD) {
-				result = first_val + second_val;
-			} else if (instruction == TOKEN_SUB) {
-				result = first_val - second_val;
-			} else if (instruction == TOKEN_MUL) {
-				result = first_val * second_val;
-			} else if (instruction == TOKEN_DIV) {
-				result = first_val / second_val;
-				SetRegister(rp->second, first_val % second_val);
-			}
-			printf("Result: %d\n", result);
-			SetRegister(rp->first, result);
-			free(rp);
+		case TOKEN_DIV: 
+			ExecuteMath(instruction, scanner);
 			break;
+		default: {
+			char* error_msg = malloc(64);
+			asprintf(&error_msg, "Unexpected token: %s", TokenTypeToString[instruction]);
+			SetErrorMsg(error_msg);
 		}
 	}
-	return IsAtEnd(scanner);
+	if (!IsAtEnd(scanner)) {
+		char* error_msg = malloc(64);
+		asprintf(&error_msg, "Too many tokens on this line");
+		SetErrorMsg(error_msg);
+	}
 }
 // ============
 // Scanner
 // ============
+Token* Peek(Scanner* scanner) {
+	if (IsAtEnd(scanner)) {
+		return NULL;
+	}
+	return scanner->token_list->tokens[scanner->cur];
+}
+
+
 Token* Advance(Scanner* scanner) {
 	Token* token = Peek(scanner);
 	if (token == NULL) {
@@ -121,8 +134,9 @@ Token* Check(Scanner* scanner, TokenType token_type) {
 	}
 	Token* token = Peek(scanner);
 	if (!token || token->type != token_type) {
-		casm_error = malloc(64);
-		asprintf(&casm_error, "Expected %s but found %s\n", TokenTypeToString[token_type], TokenTypeToString[token||TOKEN_NONE]);
+		char* error_msg = malloc(64);
+		asprintf(&error_msg, "Expected %s but found %s", TokenTypeToString[token_type], TokenTypeToString[token||TOKEN_NONE]);
+		SetErrorMsg(error_msg);
 		return NULL;
 	}
 	return token;
@@ -135,20 +149,16 @@ Token* Consume(Scanner* scanner, TokenType token_type) {
 	}
 	Token* token = Advance(scanner);
 	if (!token || token->type != token_type) {
-		casm_error = malloc(64);
-		asprintf(&casm_error, "Expected %s but found %s\n", TokenTypeToString[token_type], TokenTypeToString[token||TOKEN_NONE]);
+		char* error_msg = malloc(64);
+		asprintf(&error_msg, "Expected %s but found %s", 
+			TokenTypeToString[token_type], 
+			TokenTypeToString[token->type?token->type: TOKEN_NONE]
+		);
+		SetErrorMsg(error_msg);
 		
 		return NULL;
 	}
 	return token;
-}
-
-
-Token* Peek(Scanner* scanner) {
-	if (IsAtEnd(scanner)) {
-		return NULL;
-	}
-	return scanner->token_list->tokens[scanner->cur];
 }
 
 
@@ -165,49 +175,150 @@ bool IsAtEnd(Scanner* scanner) {
 // ============
 // Executors
 // ============
-RegisterPair* ParseRegisterPair(Scanner* scanner) {
-	Token* register_1 = Consume(scanner, TOKEN_REGISTER);
-	Token* comma = Consume(scanner, TOKEN_COMMA);
-	Token* register_2 = Consume(scanner, TOKEN_REGISTER);
+void ExecuteMath(TokenType instruction, Scanner* scanner) {
+	Register r1 = GetRegister(scanner);
+	Consume(scanner, TOKEN_COMMA);
+	Register r2 = GetRegister(scanner);
+	if (casm_error) {
+		return;
+	}
+	int op1 = registers[r1.index];
+	int op2 = registers[r2.index];
+	int result;
+	if (instruction == TOKEN_ADD) {
+		result = op1 + op2;
+	} else if (instruction == TOKEN_SUB) {
+		result = op1 - op2;
+	} else if (instruction == TOKEN_MUL) {
+		result = op1 * op2;
+	} else if (instruction == TOKEN_DIV) {
+		result = op1 / op2;
+		SetRegister(r1.index, op1%op2);
+	}
+	SetRegister(r1.index, result);
+}
+
+
+void ExecuteLoad(Scanner* scanner) {
+	Register r1 = GetRegister(scanner);
+	Consume(scanner, TOKEN_COMMA);
+	int value = ResolveLoadValue(scanner);
+	if (!casm_error) {
+		SetRegister(r1.index, value);
+	}
+}
+
+
+int ResolveLoadValue(Scanner* scanner) {
+	TokenType token_type = Peek(scanner)->type;
+	switch (token_type) {
+		case TOKEN_REGISTER:
+			return ResolveDirectAddress(scanner);
+		case TOKEN_EQUAL:
+			return ResolveImmediateAddress(scanner);
+		case TOKEN_L_BRACKET:
+			return ResolveIndexAddress(scanner);
+		case TOKEN_AT:
+			return ResolveIndirectAddress(scanner);
+		case TOKEN_DOLLAR:
+			return ResolveRelativeAddress(scanner);
+	}
+	char* error_msg = malloc(64);
+	asprintf(&error_msg, "Unexpected token %s", TokenTypeToString[token_type]);
+	SetErrorMsg(error_msg);
+	return 0;
+}
+
+
+int ResolveDirectAddress(Scanner* scanner) {
+	return GetRegister(scanner).value;
+}
+
+
+int ResolveImmediateAddress(Scanner* scanner) {
+	Advance(scanner);
+	return GetNumberNumber(scanner);
+}
+
+
+int ResolveIndexAddress(Scanner* scanner) {
+	Advance(scanner);
+	int addr = GetNumberNumber(scanner);
+	Consume(scanner, TOKEN_COMMA);
+	Register r = GetRegister(scanner);
+	Consume(scanner, TOKEN_R_BRACKET);
+	
+	if (casm_error) {
+		return 0;
+	}
+
+	return GetMemory(addr+r.value);
+}
+
+
+int ResolveIndirectAddress(Scanner* scanner) {
+	Advance(scanner);
+	int address = GetRegister(scanner).value;
 
 	if (casm_error) {
-		return NULL;
+		return 0;
 	}
-	RegisterPair* rp = (RegisterPair*)malloc(sizeof(RegisterPair));
-	rp->first = register_1->literal[1] - '0';
-	rp->second = register_2->literal[1] - '0';
-	return rp;
+
+	return GetMemory(GetMemory(address));
 }
 
 
-bool ExecuteLoad(Scanner* scanner) {
-	return false;
+int ResolveRelativeAddress(Scanner* scanner) {
+	Advance(scanner);
+	int offset = GetRegister(scanner).value;
+	int pc = 4*(registers[0]-1);
+	return GetMemory(offset+pc);
 }
 
 
-int ResolveDirectAddress() {return 0;}
+// ============
+// Helpers
+// ============
+Register GetRegister(Scanner* scanner) {
+	// From R1->5 returns { .index=1, .value=.5 }
+	Token* register_token = Consume(scanner, TOKEN_REGISTER);
+	Register r;
+	if (!register_token) {
+		return r;
+	}
+	r.index = register_token->literal[1] - '0';
+	r.value = registers[r.index];
+	return r;
+}
 
-
-int ResolveImmediateAddress() {return 0;}
-
-
-int ResolveIndexAddress() {return 0;}
-
-
-int ResolveIndirectAddress() {return 0;}
-
-
-// All return address+1 OR 0 on failure
-int ResolveLoadAddress() {
-	 return ResolveDirectAddress()
-		|| ResolveImmediateAddress()
-		|| ResolveIndexAddress()
-		|| ResolveIndirectAddress()
-		|| ResolveRelativeAddress();
+int GetNumberNumber(Scanner* scanner) {
+	// From Token {8} -> 8
+	Token* number_token = Consume(scanner, TOKEN_NUMBER);
+	if (casm_error) {
+		return 0;
+	}
+	return atoi(number_token->literal);
 }
 
 
-int ResolveRelativeAddress() {return 0;}
+int GetMemory(int address) {
+	// M:[0, 1, 2, 3, 4]
+	// GetMemory(4) -> 1
+	if (address % 4 != 0) {
+		char* error_msg = malloc(64);
+		asprintf(&error_msg, "Expected address to be multiple of 4: 0x%d", address);
+		SetErrorMsg(error_msg);
+		return 0;
+	}
+	char* line = memory[address/4];
+	if (line == NULL) {
+		char* error_msg = malloc(64);
+		asprintf(&error_msg, "Garbage contained at memory address: 0x%d", address);
+		SetErrorMsg(error_msg);
+		return 0;
+	}
+	return atoi(line);
+}
 
 
 // ============
@@ -228,6 +339,14 @@ void SetStorage(int num, char* value){
 	memory[num] = value;
 } 
 
+void SetErrorMsg(char* msg) {
+	if (casm_error) {
+		free(msg);
+		return;
+	}
+	casm_error = msg;
+}
+
 // ============
 // Debug Info
 // ============
@@ -243,7 +362,6 @@ void PrintRegisters() {
 // Main
 // ============
 int main() {
-	int num_lines = 1;
 	/*
 	char* lines[] = {
 		"			LOAD R1 =0",
@@ -255,9 +373,15 @@ int main() {
 		"HALT"
 	};
 	*/
+	memory[20] = "17";
 	char* lines[] = {
-		"ADD R1, R2"
+		"LOAD R1, =12",
+		"LOAD R2, R1",
+		"LOAD R3, [68, R1]",
+		"ADD R1, R2",
+		"HALT"
 	};
+	int num_lines = sizeof(lines)/sizeof(char*);
 	char* label_names[MAX_LABELS];
 	int label_locations[MAX_LABELS];
 	int num_labels = Preprocess(lines, num_lines, label_names, label_locations);
@@ -269,12 +393,13 @@ int main() {
 	for (int i = 0; i < num_lines; i++) {
 		memory[i] = lines[i];
 	}
-	registers[2] = 1;
 
-	if (!StepProgram()) {
-		printf("%s\n", casm_error);
+	while (StepProgram()) {}
+	if (casm_error) {
+		int pc = registers[0]-1;
+		printf("Error on line 0x%X: %s\n", pc*4, casm_error);
+		printf("%s\n\n", lines[pc]);
 	}
 	PrintRegisters();
-	// while (StepProgram()) {}
 	return 0;
 }

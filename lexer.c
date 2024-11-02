@@ -292,7 +292,7 @@ TokenList* TokenizeLine(char* s) {
 					ScannerAddToken(TOKEN_COMMA);
 					break;
 			default:
-				if (IsDigit(c)) {
+				if (IsNonZeroDigit(c)) {
 					ScannerScanNumber();
 				}
 				else if (IsAlpha(c)) {
