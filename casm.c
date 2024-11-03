@@ -51,6 +51,7 @@ bool IsAtEnd(Scanner* scanner);
 // Executors
 void ExecuteInstruction(Scanner* scanner);
 void ExecuteMath(TokenType instruction, Scanner* scanner);
+void ExecuteInc(Scanner* scanner);
 void ExecuteLoad(Scanner* scanner);
 void ExecuteStore(Scanner* scanner);
 void ExecuteRead(Scanner* scanner);
@@ -85,6 +86,7 @@ char* PrintJumpLabelBreakdown();
 int main();
 // Tests
 void LoadTest();
+void MathTest();
 void StoreTest();
 void StorageTest();
 void LoopTest();
@@ -208,7 +210,10 @@ Token* Check(Scanner* scanner, TokenType token_type) {
 	Token* token = Peek(scanner);
 	if (!token || token->type != token_type) {
 		char* error_msg;
-		asprintf(&error_msg, "Expected %s but found %s", TokenTypeToString[token_type], TokenTypeToString[token||TOKEN_NONE]);
+		asprintf(&error_msg, "Expected %s but found %s", 
+			TokenTypeToString[token_type], 
+			TokenTypeToString[token?token->type:TOKEN_NONE]
+		);
 		SetErrorMsg(error_msg);
 		return NULL;
 	}
@@ -225,7 +230,7 @@ Token* Consume(Scanner* scanner, TokenType token_type) {
 		char* error_msg;
 		asprintf(&error_msg, "Expected %s but found %s", 
 			TokenTypeToString[token_type], 
-			TokenTypeToString[token->type?token->type: TOKEN_NONE]
+			TokenTypeToString[token?token->type: TOKEN_NONE]
 		);
 		SetErrorMsg(error_msg);
 		
@@ -272,6 +277,9 @@ void ExecuteInstruction(Scanner* scanner) {
 		case TOKEN_DIV: 
 			ExecuteMath(instruction, scanner);
 			break;
+		case TOKEN_INC:
+			ExecuteInc(scanner);
+			break;
 		default: {
 			char* error_msg;
 			asprintf(&error_msg, "Unexpected token while resolving instruction: %s", TokenTypeToString[instruction]);
@@ -294,7 +302,7 @@ void ExecuteMath(TokenType instruction, Scanner* scanner) {
 	}
 	int op1 = registers[r1.index];
 	int op2 = registers[r2.index];
-	int result;
+	unsigned int result;
 	if (instruction == TOKEN_ADD) {
 		result = op1 + op2;
 	} else if (instruction == TOKEN_SUB) {
@@ -303,9 +311,15 @@ void ExecuteMath(TokenType instruction, Scanner* scanner) {
 		result = op1 * op2;
 	} else if (instruction == TOKEN_DIV) {
 		result = op1 / op2;
-		SetRegister(r1.index, op1%op2);
+		unsigned int second_result = op1%op2;
+		SetRegister(r2.index, (int)second_result);
 	}
-	SetRegister(r1.index, result);
+	SetRegister(r1.index, (int)result);
+}
+
+void ExecuteInc(Scanner* scanner) {
+	Register r1 = GetRegister(scanner);
+	SetRegister(r1.index, r1.value+1);
 }
 
 void ExecuteLoad(Scanner* scanner) {
@@ -663,11 +677,46 @@ char* PrintJumpLabelBreakdown() {
 // Main
 // ============
 int main() {
+	MathTest();
 	LoadTest();
 	StoreTest();
 	StorageTest();
 	// LoopTest();
 }
+
+
+void MathTest() {
+	char* lines[] = {
+		"LOAD R1, =10",
+		"LOAD R2, =10",
+		"LOAD R3, =10",
+		"LOAD R4, =10",
+		"LOAD R5, =10",
+		"LOAD R6, =5 ; Operand for all math",
+		"ADD R1, R6",
+		"SUB R2, R6",
+		"MUL R3, R6",
+		"DIV R4, R6",
+		"INC R5",
+		"HALT",
+	};
+	int num_lines = sizeof(lines)/sizeof(char*);
+	if (!LoadProgram(lines, num_lines)) {
+		PrintErrorMsg();
+		return;
+	}
+	if (!RunProgram()) {
+		PrintErrorMsg();
+	}
+	
+	assert(registers[1] == 15 && "10 + 5 == 15");
+	assert(registers[2] == 5 && "10 - 5 == 5");
+	assert(registers[3] == 50 && "10 * 5 == 50");
+	assert(registers[4] == 2 && "10 // 5 == 2");
+	assert(registers[6] == 0 && "10 % 5 == 0");
+	assert(registers[5] == 11 && "INC 10 == 11");
+}
+
 
 void LoadTest() {
 	char* lines[] = {
@@ -697,6 +746,7 @@ void LoadTest() {
 	assert(registers[5] == 21);
 	assert(registers[6] == 21);
 }
+
 
 void StoreTest() {
 	char* lines[] = {
