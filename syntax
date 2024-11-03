@@ -11,15 +11,15 @@ LOAD <register>, [<number>, <register>]
 LOAD <register>, @<register>
 LOAD <register>, $<register>
 
-STORE Ri, <register>
-STORE Ri, [<number>, <register>]
-STORE Ri, $<register>
+STORE <register>, <register>
+STORE <register>, [<number>, <register>]
+STORE <register>, $<register>
 
-READ Ri, Addr
-READ Ri, [Addr, Rj]
+READ <register>, <register>
+READ <register>, [<number>, <register>]
 
-WRITE Ri, Addr
-WRITE Ri, [Addr, Rj]
+WRITE <register>, <register>
+WRITE <register>, [<number>, <register>]
 
 ADD Ri, Rj
 SUB Ri, Rj
