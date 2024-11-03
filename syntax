@@ -11,9 +11,9 @@ LOAD <register>, [<number>, <register>]
 LOAD <register>, @<register>
 LOAD <register>, $<register>
 
-STORE Ri, Addr
-STORE Ri, [Addr, Rj]
-STORE Ri, $Num
+STORE Ri, <register>
+STORE Ri, [<number>, <register>]
+STORE Ri, $<register>
 
 READ Ri, Addr
 READ Ri, [Addr, Rj]

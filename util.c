@@ -26,6 +26,12 @@ bool ToInteger(char* s, int* i) {
 	return true;
 }
 
+char* IntToString(int i) {
+	char* s;
+	asprintf(&s, "%i", i);
+	return s;
+}
+
 /*
 int main() {
 	char* s1 = "100";

@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -7,11 +8,12 @@
 #include "util.h"
 
 #define MAX_LABELS 16
+#define MAX_REGISTERS 9
 #define MEMORY_SIZE 64
 #define STORAGE_SIZE 64
 #define MAX_LABEL_JUMPS 1000
 
-int registers[10] = { 0 };
+int registers[MAX_REGISTERS+1] = { 0 };
 char* memory[MEMORY_SIZE] = { NULL };
 char* storage[STORAGE_SIZE] = { NULL };
 bool haltflag = false;
@@ -36,7 +38,7 @@ typedef struct Register {
 
 // Entry Points - If any return false, check casm_error
 bool LoadProgram(char** program, int num_lines); // Automatically resets state from previous execution
-bool RunProgram();
+bool RunProgram(); // True if program was successful
 bool StepProgram();
 void PrintErrorMsg();
 // Scanner
@@ -49,29 +51,38 @@ bool IsAtEnd(Scanner* scanner);
 // Executors
 void ExecuteInstruction(Scanner* scanner);
 void ExecuteLoad(Scanner* scanner);
+void ExecuteStore(Scanner* scanner);
 void ExecuteMath(TokenType instruction, Scanner* scanner);
-int ResolveDirectAddress(Scanner* scanner);
-int ResolveImmediateAddress(Scanner* scanner);
-int ResolveIndexAddress(Scanner* scanner);
-int ResolveIndirectAddress(Scanner* scanner);
+int ResolveDirectAddressValue(Scanner* scanner);
 int ResolveLoadValue(Scanner* scanner);
+int ResolveStoreAddress(Scanner* scanner);
+// Addressing
+int ResolveImmediateAddressValue(Scanner* scanner);
+int ResolveIndexAddress(Scanner* scanner);
+int ResolveIndexAddressValue(Scanner* scanner);
+int ResolveIndirectAddress(Scanner* scanner);
+int ResolveIndirectAddressValue(Scanner* scanner);
 int ResolveRelativeAddress(Scanner* scanner);
-// Helpers
+int ResolveRelativeAddressValue(Scanner* scanner);
+// Getters
 Register GetRegister(Scanner* scanner);
 int GetNumberNumber(Scanner* scanner);
 int GetMemory(int address);
-// Getters and Setters
+// Setters
 void SetRegister(int num, int value);
 void SetMemory(int num, char* value, bool set_focused);
 void SetStorage(int num, char* value);
 void SetErrorMsg(char* msg);
 // Debug Info
 void PrintRegisters();
+void PrintMemory();
+void PrintMemoryRange(int lower, int upper); // Inclusive on both bounds
 char* PrintJumpLabelBreakdown();
 // Main
 int main();
 // Tests
 void LoadTest();
+void StoreTest();
 void LoopTest();
 
 
@@ -99,6 +110,7 @@ bool LoadProgram(char** program, int num_lines) {
 	haltflag = false;
 	if (casm_error) {
 		free(casm_error);
+		casm_error = NULL;
 	}
 
 	num_labels = Preprocess(program, num_lines, label_names, label_locations);
@@ -128,6 +140,10 @@ bool RunProgram() {
 }
 
 void PrintErrorMsg() {
+	if (!casm_error) {
+		printf("Attempted to print error msg when there was no error\n");
+		return;
+	}
 	int pc = registers[0]-1;
 	printf("Error at address %d executing '%s'\n", pc*4, memory[pc]);
 	printf("%s\n", casm_error);
@@ -143,7 +159,9 @@ bool StepProgram() {
 	}
 	TokenList* token_list = TokenizeLine(line);
 	if (token_list == NULL) {
-		SetErrorMsg(lexer_error);
+		char* error_msg;
+		asprintf(&error_msg, "Lexer Error: %s", lexer_error);
+		SetErrorMsg(error_msg);
 		return false;
 	}
 	Scanner scanner = { token_list, 0 };
@@ -230,6 +248,9 @@ void ExecuteInstruction(Scanner* scanner) {
 		case TOKEN_LOAD:
 			ExecuteLoad(scanner);
 			break;
+		case TOKEN_STORE:
+			ExecuteStore(scanner);
+			break;
 		case TOKEN_HALT:
 			haltflag = true;
 			break;
@@ -275,31 +296,20 @@ void ExecuteMath(TokenType instruction, Scanner* scanner) {
 	SetRegister(r1.index, result);
 }
 
-
-void ExecuteLoad(Scanner* scanner) {
-	Register r1 = GetRegister(scanner);
-	Consume(scanner, TOKEN_COMMA);
-	int value = ResolveLoadValue(scanner);
-	if (!casm_error) {
-		SetRegister(r1.index, value);
-	}
-}
-
-
 int ResolveLoadValue(Scanner* scanner) {
 	Token* token = Peek(scanner);
 	if (token == NULL) goto err;
 	switch (token->type) {
 		case TOKEN_REGISTER:
-			return ResolveDirectAddress(scanner);
+			return ResolveDirectAddressValue(scanner);
 		case TOKEN_EQUAL:
-			return ResolveImmediateAddress(scanner);
+			return ResolveImmediateAddressValue(scanner);
 		case TOKEN_L_BRACKET:
-			return ResolveIndexAddress(scanner);
+			return ResolveIndexAddressValue(scanner);
 		case TOKEN_AT:
-			return ResolveIndirectAddress(scanner);
+			return ResolveIndirectAddressValue(scanner);
 		case TOKEN_DOLLAR:
-			return ResolveRelativeAddress(scanner);
+			return ResolveRelativeAddressValue(scanner);
 	}
 	err: {
 		char* error_msg;
@@ -311,13 +321,57 @@ int ResolveLoadValue(Scanner* scanner) {
 	}
 }
 
+int ResolveStoreAddress(Scanner* scanner) {
+	Token* token = Peek(scanner);
+	if (token == NULL) goto err;
+	switch (token->type) {
+		case TOKEN_REGISTER:
+			return ResolveDirectAddressValue(scanner);
+		case TOKEN_L_BRACKET:
+			return ResolveIndexAddress(scanner);
+		case TOKEN_DOLLAR:
+			return ResolveRelativeAddress(scanner);
+	}
+	err: {
+		char* error_msg;
+		asprintf(&error_msg, "Unexpected token %s while resolving store value", 
+			TokenTypeToString[token?token->type: TOKEN_NONE]
+		);
+		SetErrorMsg(error_msg);
+		return 0;
+	}
+	
+}
 
-int ResolveDirectAddress(Scanner* scanner) {
+
+void ExecuteLoad(Scanner* scanner) {
+	Register r1 = GetRegister(scanner);
+	Consume(scanner, TOKEN_COMMA);
+	int value = ResolveLoadValue(scanner);
+	if (!casm_error) {
+		SetRegister(r1.index, value);
+	}
+}
+
+void ExecuteStore(Scanner* scanner) {
+	Register r1 = GetRegister(scanner);
+	Consume(scanner, TOKEN_COMMA);
+	int address = ResolveStoreAddress(scanner); // Needs to get the addresses instead of the values
+	if (!casm_error) {
+		char* str_value = IntToString(r1.value);
+		SetMemory(address, str_value, false);
+	}
+}
+
+// ============
+// Addressing
+// ============
+int ResolveDirectAddressValue(Scanner* scanner) {
 	return GetRegister(scanner).value;
 }
 
 
-int ResolveImmediateAddress(Scanner* scanner) {
+int ResolveImmediateAddressValue(Scanner* scanner) {
 	Advance(scanner);
 	return GetNumberNumber(scanner);
 }
@@ -334,7 +388,11 @@ int ResolveIndexAddress(Scanner* scanner) {
 		return 0;
 	}
 
-	return GetMemory(addr+r.value);
+	return addr+r.value;
+}
+
+int ResolveIndexAddressValue(Scanner* scanner) {
+	return GetMemory(ResolveIndexAddress(scanner));
 }
 
 
@@ -346,7 +404,11 @@ int ResolveIndirectAddress(Scanner* scanner) {
 		return 0;
 	}
 
-	return GetMemory(GetMemory(address));
+	return GetMemory(address);
+}
+
+int ResolveIndirectAddressValue(Scanner* scanner) {
+	return GetMemory(ResolveIndirectAddress(scanner));
 }
 
 
@@ -354,12 +416,16 @@ int ResolveRelativeAddress(Scanner* scanner) {
 	Advance(scanner);
 	int offset = GetRegister(scanner).value;
 	int pc = 4*(registers[0]-1);
-	return GetMemory(offset+pc);
+	return offset+pc;
+}
+
+int ResolveRelativeAddressValue(Scanner* scanner) {
+	return GetMemory(ResolveRelativeAddress(scanner));
 }
 
 
 // ============
-// Helpers
+// Getters
 // ============
 Register GetRegister(Scanner* scanner) {
 	// From R1->5 returns { .index=1, .value=.5 }
@@ -382,10 +448,15 @@ int GetNumberNumber(Scanner* scanner) {
 	return atoi(number_token->literal);
 }
 
-
 int GetMemory(int address) {
 	// M:[0, 1, 2, 3, 4]
 	// GetMemory(4) -> 1
+	if (address % 4 >= MEMORY_SIZE) {
+		char* error_msg;
+		asprintf(&error_msg, "Memory address '%d' greater than max memory size '%d'", address, MEMORY_SIZE);
+		SetErrorMsg(error_msg);
+		return 0;
+	}
 	if (address % 4 != 0) {
 		char* error_msg;
 		asprintf(&error_msg, "Expected address to be multiple of 4: 0x%d", address);
@@ -396,7 +467,7 @@ int GetMemory(int address) {
 	int contents = 0;
 	if (line == NULL || !ToInteger(line, &contents)) {
 		char* error_msg;
-		asprintf(&error_msg, "Cannot read memory address %d since it contains garbage or a non positive integer: '%s'", address, line);
+		asprintf(&error_msg, "Cannot read memory address %d since it contains garbage or a non positive integer: '%s'\nWhile this is *Technically* valid, since every memory address is actually just numbers being interpreted as instructions and whatnot, I'm assuming this is not what you were intending.", address, line);
 		SetErrorMsg(error_msg);
 		return 0;
 	}
@@ -407,19 +478,50 @@ int GetMemory(int address) {
 // ============
 // Setters
 // ============
-// TODO: Add animations
-void SetRegister(int num, int value) {
-	registers[num] = value;
+// TODO: Add animations and enforce validations
+void SetRegister(int reg_num, int value) {
+	if (reg_num > MAX_REGISTERS || reg_num < 1) {
+		char* error_msg;
+		asprintf(&error_msg, "General purpose registers range from 1-%d. Used nonexistant register %d",
+			MAX_REGISTERS,
+			reg_num);
+		return;
+	}
+	registers[reg_num] = value;
 }
 
 
-void SetMemory(int num, char* value, bool set_focused) {
-	memory[num] = value;
+void SetMemory(int address, char* value, bool set_focused) {
+	if (address % 4 >= MEMORY_SIZE) {
+		char* error_msg;
+		asprintf(&error_msg, "Memory address '%d' greater than max memory size '%d'", address, MEMORY_SIZE);
+		SetErrorMsg(error_msg);
+		return;
+	}
+	if (address % 4 != 0) {
+		char* error_msg;
+		asprintf(&error_msg, "Expected address to be multiple of 4: 0x%d", address);
+		SetErrorMsg(error_msg);
+		return;
+	}
+	memory[address/4] = value;
 }
 
 
-void SetStorage(int num, char* value){
-	memory[num] = value;
+void SetStorage(int address, char* value){
+	if (address % 4 >= STORAGE_SIZE) {
+		char* error_msg;
+		asprintf(&error_msg, "Storage address '%d' greater than max storage size '%d'", address, MEMORY_SIZE);
+		SetErrorMsg(error_msg);
+		return;
+	}
+	if (address % 4 != 0) {
+		char* error_msg;
+		asprintf(&error_msg, "Expected address to be multiple of 4: 0x%d", address);
+		SetErrorMsg(error_msg);
+		return;
+	}
+	storage[address/4] = value;
 } 
 
 void SetErrorMsg(char* msg) {
@@ -437,6 +539,16 @@ void PrintRegisters() {
 	printf("PC: %d\n", registers[0]);
 	for (int i = 1; i < 10; i++) {
 		printf("R%d: %d\n", i, registers[i]);
+	}
+}
+
+void PrintMemory() {
+	PrintMemoryRange(0, MEMORY_SIZE-1);
+}
+
+void PrintMemoryRange(int lower, int upper) {
+	for (int i = lower/4; i < upper/4+1; i++) {
+		printf("%d: %s\n", i*4, memory[i]);
 	}
 }
 
@@ -462,7 +574,8 @@ char* PrintJumpLabelBreakdown() {
 // Main
 // ============
 int main() {
-	LoadTest();
+	// LoadTest();
+	StoreTest();
 	// LoopTest();
 }
 
@@ -489,6 +602,36 @@ void LoadTest() {
 	assert(registers[4] == 80);
 	assert(registers[5] == 21);
 	assert(registers[6] == 21);
+}
+
+void StoreTest() {
+	char* lines[] = {
+		"LOAD R1, =100",
+		"LOAD R2, =48",
+		"LOAD R3, =4",
+		"LOAD R4, =8",
+		"STORE R1, R2", // M48:100
+		"ADD R1, R3",
+		"STORE R1, [4, R2]", // M52:104
+		"ADD R1, R3",
+		"STORE R1, $R4", // After haltflag: 108
+		"HALT"
+	};
+	int num_lines = sizeof(lines)/sizeof(char*);
+	if (!LoadProgram(lines, num_lines)) {
+		PrintErrorMsg();
+		return;
+	}
+	if (!RunProgram()) {
+		PrintErrorMsg();
+		return;
+	}
+	assert(memory[48/4] != NULL && "Memory at address 48 is not null");
+	assert(GetMemory(48) == 100 && "Memory at address 48 is 100");
+	assert(memory[52/4] != NULL && "Memory at address 52 is not null");
+	assert(GetMemory(52) == 104 && "Memory at address 52 is 104");
+	assert(memory[num_lines] != NULL && "Memory at address after haltflag is not null");
+	assert(GetMemory(num_lines*4) == 108 && "Memory at after haltflag is 108");
 }
 
 void LoopTest() {

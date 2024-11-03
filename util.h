@@ -9,5 +9,6 @@ bool IsDigit(char c);
 bool IsNonZeroDigit(char c);
 bool IsAlpha(char c);
 bool ToInteger(char* s, int* i);
+char* IntToString(int i);
 
 #endif
