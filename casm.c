@@ -56,6 +56,10 @@ void ExecuteLoad(Scanner* scanner);
 void ExecuteStore(Scanner* scanner);
 void ExecuteRead(Scanner* scanner);
 void ExecuteWrite(Scanner* scanner);
+void ExecuteBr(Scanner* scanner);
+void ExecuteConditionalBranch(TokenType instruction, Scanner* scanner);
+// Jump Helper
+int ResolveLabelIndex(Scanner* scanner);
 // Addressing Combinations
 int ResolveLoadValue(Scanner* scanner);
 int ResolveStoreAddress(Scanner* scanner);
@@ -73,6 +77,7 @@ int GetNumberNumber(Scanner* scanner);
 int GetMemory(int address);
 int GetStorage(int address);
 // Setters
+void SetProgramCounter(int pc);
 void SetRegister(int num, int value);
 void SetMemory(int num, char* value, bool set_focused);
 void SetStorage(int num, char* value, bool set_focused);
@@ -100,7 +105,7 @@ bool LoadProgram(char** program, int num_lines) {
 		free(casm_error);
 		casm_error = NULL;
 	}
-	registers[0] = 0;
+	SetProgramCounter(0);
 	for (int i = 1; i < 10; i++) {
 		SetRegister(i, 0);
 	}
@@ -158,7 +163,8 @@ void PrintErrorMsg() {
 }
 
 bool StepProgram() {
-	char* line = memory[registers[0]++];
+	char* line = memory[registers[0]];
+	SetProgramCounter(registers[0]+1);
 	if (!line) {
 		char* error_msg;
 		asprintf(&error_msg, "Expected instruction but found garbage");
@@ -280,6 +286,17 @@ void ExecuteInstruction(Scanner* scanner) {
 		case TOKEN_INC:
 			ExecuteInc(scanner);
 			break;
+		case TOKEN_BR:
+			ExecuteBr(scanner);
+			break;
+		case TOKEN_BLT:
+		case TOKEN_BGT:
+		case TOKEN_BLEQ:
+		case TOKEN_BGEQ:
+		case TOKEN_BEQ:
+		case TOKEN_BNEQ:
+			ExecuteConditionalBranch(instruction, scanner);
+			break;
 		default: {
 			char* error_msg;
 			asprintf(&error_msg, "Unexpected token while resolving instruction: %s", TokenTypeToString[instruction]);
@@ -360,6 +377,80 @@ void ExecuteWrite(Scanner* scanner) {
 		char* str_value = IntToString(r1.value);
 		SetStorage(address, str_value, false);
 	}
+}
+
+void ExecuteBr(Scanner* scanner) {
+	int index = ResolveLabelIndex(scanner);
+	if (casm_error) {
+		return;
+	}
+	num_label_jumps++;
+	label_jump_counts[index]++;
+	SetProgramCounter(label_locations[index]);
+}
+
+void ExecuteConditionalBranch(TokenType jump_type, Scanner* scanner) {
+	Register r1 = GetRegister(scanner);
+	Consume(scanner, TOKEN_COMMA);
+	Register r2 = GetRegister(scanner);
+	Consume(scanner, TOKEN_COMMA);
+	int index = ResolveLabelIndex(scanner);
+
+	if (casm_error) {
+		return;
+	}
+
+	bool jump = false;
+	int op1 = r1.value;
+	int op2 = r2.value;
+	switch (jump_type) {
+		case TOKEN_BLT:
+			jump = op1 < op2;
+			break;
+		case TOKEN_BGT:
+			jump = op1 > op2;
+			break;
+		case TOKEN_BLEQ:
+			jump = op1 <= op2;
+			break;
+		case TOKEN_BGEQ:
+			jump = op1 >= op2;
+			break;
+		case TOKEN_BEQ:
+			jump = op1 == op2;
+			break;
+		case TOKEN_BNEQ:
+			jump = op1 != op2;
+			break;
+	}
+	if (jump) {
+		num_label_jumps++;
+		label_jump_counts[index]++;
+		SetProgramCounter(label_locations[index]);
+	}
+}
+// ============
+// Jump Helper
+// ============
+int ResolveLabelIndex(Scanner* scanner) {
+	Token* token = Consume(scanner, TOKEN_LABEL_REF);
+	if (token == NULL) {
+		return 0;
+	}
+
+	char* label_ref;
+	asprintf(&label_ref, "%.*s", token->length, token->literal);
+	for (int i = 0; i < num_labels; i++) {
+		if (strcmp(label_ref, label_names[i]) == 0) {
+			free(label_ref);
+			return i;
+		}
+	}
+	char* error_msg;
+	asprintf(&error_msg, "Failed to resolve label '%s'", label_ref);
+	free(label_ref);
+	SetErrorMsg(error_msg);
+	return -1;
 }
 
 
@@ -581,6 +672,15 @@ int GetStorage(int address) {
 // Setters
 // ============
 // TODO: Add animations and enforce validations
+void SetProgramCounter(int pc) {
+	if (pc < 0 || pc >= MEMORY_SIZE) {
+		char* error_msg;
+		asprintf(&error_msg, "Program Counter exceeded max memory size %d", MEMORY_SIZE);
+		return;
+	}
+	registers[0] = pc;
+}
+
 void SetRegister(int reg_num, int value) {
 	if (reg_num > MAX_REGISTERS || reg_num < 1) {
 		char* error_msg;
@@ -658,7 +758,7 @@ void PrintMemoryRange(int lower, int upper) {
 char* PrintJumpLabelBreakdown() {
 	char* result = NULL;
     char *temp = NULL;    
-	asprintf(&result, "Jumps per label breakdown:");
+	asprintf(&result, "Jumps to each label:");
 
     for (int i = 0; i < num_labels; i++) {
         asprintf(&temp, "\n%s: %d", label_names[i], label_jump_counts[i]);
@@ -681,7 +781,7 @@ int main() {
 	LoadTest();
 	StoreTest();
 	StorageTest();
-	// LoopTest();
+	LoopTest();
 }
 
 
@@ -814,15 +914,14 @@ void LoopTest() {
 		"			LOAD R1, =0",
 		"			LOAD R2, =10",
 		"Label: 	BGEQ R1, R2, Label2", 
-		"			ADD R2, R1",
 		"			INC R1 ",
-		"Label2:	BR Label",
-		"HALT"
+		"			BR Label",
+		"Label2:	HALT"
 	};
 	LoadProgram(lines, sizeof(lines)/sizeof(char*));
-	printf("%s\n", PrintJumpLabelBreakdown());
 	
 	if (!RunProgram()) {
 		PrintErrorMsg();
 	}
+	printf("%s\n", PrintJumpLabelBreakdown());
 }

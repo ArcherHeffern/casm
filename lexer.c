@@ -41,6 +41,7 @@ char* TokenTypeToString[] = {
 	"TOKEN_BLEQ",
 	"TOKEN_BGEQ",
 	"TOKEN_BEQ",
+	"TOKEN_BNEQ",
 
 	"TOKEN_LABEL_REF",
 	"TOKEN_REGISTER",
@@ -192,6 +193,7 @@ TokenType ScannerParseIdentifier() {
 						case 'E':
 							return ScannerCheckRest(3, "Q", 1, TOKEN_BGEQ);
 					}
+					break;
 				case 'L':
 					if (ScannerTokenLength() < 3) {
 						return TOKEN_LABEL_REF;
@@ -202,9 +204,13 @@ TokenType ScannerParseIdentifier() {
 						case 'T':
 							return ScannerCheckRest(3, "", 0, TOKEN_BLT);
 					}
+					break;
+				case 'N':
+					return ScannerCheckRest(2, "EQ", 2, TOKEN_BNEQ);
 				case 'R':
 					return ScannerCheckRest(2, "", 0, TOKEN_BR);
 			}
+			break;
 		case 'D':
 			return ScannerCheckRest(1, "IV", 2, TOKEN_DIV);
 		case 'H':
@@ -227,6 +233,7 @@ TokenType ScannerParseIdentifier() {
 				case 'U':
 					return ScannerCheckRest(2, "B", 1, TOKEN_SUB);
 			}
+			break;
 		case 'W':
 			return ScannerCheckRest(1, "RITE", 4, TOKEN_WRITE);
 	}

@@ -36,3 +36,7 @@ BGT <register>, <register>, <label>
 BLEQ <register>, <register>, <label>
 BGEQ <register>, <register>, <label>
 BEQ <register>, <register>, <label>
+BNEQ <register>, <register>, <label>
+
+# Modifications
+- Added BNEQ
