@@ -2,7 +2,10 @@ LABEL:
 LITERAL
 REGISTER
 
+<letter> := LETTER
 <number> ::= NUMBER
+
+<label> := <letter>+
 <register> ::= R<number>
 
 LOAD <register>, <register>
@@ -21,15 +24,15 @@ READ <register>, [<number>, <register>]
 WRITE <register>, <register>
 WRITE <register>, [<number>, <register>]
 
-ADD Ri, Rj
-SUB Ri, Rj
-MUL Ri, Rj
-DIV Ri, Rj
-INC Ri
+ADD <register>, <register>
+SUB <register>, <register>
+MUL <register>, <register>
+DIV <register>, <register>
+INC <register>
 
 BR Label
-BLT Ri, Rj, Label
-BGT Ri, Rj, Label
-BLEQ Ri, Rj, Label
-BGEQ Ri, Rj, Label
-BEQ Ri, Rj, Label
+BLT <register>, <register>, <label>
+BGT <register>, <register>, <label>
+BLEQ <register>, <register>, <label>
+BGEQ <register>, <register>, <label>
+BEQ <register>, <register>, <label>
