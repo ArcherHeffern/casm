@@ -9,11 +9,6 @@
 #include "casm.h"
 #include "casm_internal.h"
 
-#define MEMORY_SIZE 64
-#define STORAGE_SIZE 64
-#define MAX_REGISTERS 9
-#define MAX_LABEL_JUMPS 1000
-#define MAX_LABELS 16
 
 bool haltflag = false;
 
@@ -36,35 +31,29 @@ void 	(*UISetStorage)(int address, char* value) = NULL;
 // ============
 // Entry Points
 // ============
+void PassUIGettersAndSetters(
+	int 	(*_UIGetRegister)(int),
+	char* 	(*_UIGetMemory)(int),
+	char* 	(*_UIGetStorage)(int),
+	void 	(*_UISetRegister)(int, int),
+	void 	(*_UISetMemory)(int, char*),
+	void 	(*_UISetStorage)(int, char*)
+) {
+	UIGetRegister = _UIGetRegister;
+	UISetRegister = _UISetRegister;
+	UIGetMemory = _UIGetMemory;
+	UISetMemory = _UISetMemory;
+	UIGetStorage = _UIGetStorage;
+	UISetStorage = _UISetStorage;
+}
+
 bool LoadProgram(
 	char** 	program, 
-	int 	num_lines,
-	int 	(*UIGetRegister)(int),
-	char* 	(*UIGetMemory)(int),
-	char* 	(*UIGetStorage)(int),
-	void 	(*UISetRegister)(int, int),
-	void 	(*UISetMemory)(int, char*),
-	void 	(*UISetStorage)(int, char*)
+	int 	num_lines
 	) {
-	UIGetRegister = UIGetRegister;
-	UISetRegister = UISetRegister;
-	UIGetMemory = UIGetMemory;
-	UISetMemory = UISetMemory;
-	UIGetStorage = UIGetStorage;
-	UISetStorage = UISetStorage;
 	if (casm_error) {
 		free(casm_error);
 		casm_error = NULL;
-	}
-	SetProgramCounter(0);
-	for (int i = 1; i < 10; i++) {
-		SetRegister(i, 0);
-	}
-	for (int i = 0; i < MEMORY_SIZE; i++) {
-		SetMemory(i*4, NULL);
-	}
-	for (int i = 0; i < STORAGE_SIZE; i++) {
-		SetStorage(i*4, NULL);
 	}
 	for (int i = 0; i < num_labels; i++) {
 		free(label_names[i]);
@@ -85,21 +74,15 @@ bool LoadProgram(
 	}
 	// Load memory
 	for (int i = 0; i < num_lines; i++) {
-		SetMemory(i*4, program[i]);
+		// SetMemory(i*4, program[i]);
+		SetMemoryCellValue(i, program[i], RESET_DURATION, i*RESET_DELAY);
 	}
 	
 	return true;
 }
 
 bool RunProgram() {
-	while (StepProgram()) {
-		if (num_label_jumps >= MAX_LABEL_JUMPS) {
-			char* error_msg;
-			asprintf(&error_msg, "%d jumps performed - Possible infinite loop\n\n%s", MAX_LABEL_JUMPS, PrintJumpLabelBreakdown());
-			SetErrorMsg(error_msg);
-			break;
-		}
-	}
+	while (StepProgram()) {}
 	return casm_error == NULL;
 }
 
@@ -134,6 +117,12 @@ bool StepProgram() {
 	ExecuteInstruction(&scanner);
 
 	TokenListFree(token_list);
+
+	if (num_label_jumps >= MAX_LABEL_JUMPS) {
+		char* error_msg;
+		asprintf(&error_msg, "%d jumps performed - Possible infinite loop\n\n%s", MAX_LABEL_JUMPS, PrintJumpLabelBreakdown());
+		SetErrorMsg(error_msg);
+	}
 
 	bool can_continue = !casm_error && !haltflag;
 	return can_continue;
@@ -779,19 +768,6 @@ void TearDownTests() {
 	free(test_storage);
 }
 
-bool TestLoadProgram(char** program, int num_lines) {
-	return LoadProgram(
-		program,
-		num_lines,
-		MockGetRegister,
-		MockGetMemory,
-		MockGetStorage,
-		MockSetRegister,
-		MockSetMemory,
-		MockSetStorage
-	);
-}
-
 int	MockGetRegister(int reg_num) {return test_registers[reg_num];}
 char* MockGetMemory(int address) {return test_memory[address/4];}
 char* MockGetStorage(int address) {return test_storage[address/4];}
@@ -815,7 +791,7 @@ void MathTest() {
 		"HALT",
 	};
 	int num_lines = sizeof(lines)/sizeof(char*);
-	if (!TestLoadProgram(lines, num_lines)) {
+	if (!LoadProgram(lines, num_lines)) {
 		PrintErrorMsg();
 		return;
 	}
@@ -845,7 +821,7 @@ void LoadTest() {
 		"21"
 	};
 	int num_lines = sizeof(lines)/sizeof(char*);
-	if (!TestLoadProgram(lines, num_lines)) {
+	if (!LoadProgram(lines, num_lines)) {
 		PrintErrorMsg();
 		return;
 	}
@@ -876,7 +852,7 @@ void StoreTest() {
 		"HALT"
 	};
 	int num_lines = sizeof(lines)/sizeof(char*);
-	if (!TestLoadProgram(lines, num_lines)) {
+	if (!LoadProgram(lines, num_lines)) {
 		PrintErrorMsg();
 		return;
 	}
@@ -906,7 +882,7 @@ void StorageTest() {
 		"HALT"
 	};
 	int num_lines = sizeof(lines)/sizeof(char*);
-	if (!TestLoadProgram(lines, num_lines)) {
+	if (!LoadProgram(lines, num_lines)) {
 		PrintErrorMsg();
 		return;
 	}
@@ -932,7 +908,7 @@ void LoopTest() {
 		"			BR Label",
 		"Label2:	HALT"
 	};
-	TestLoadProgram(lines, sizeof(lines)/sizeof(char*));
+	LoadProgram(lines, sizeof(lines)/sizeof(char*));
 	
 	if (!RunProgram()) {
 		PrintErrorMsg();

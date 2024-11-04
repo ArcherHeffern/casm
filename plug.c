@@ -6,41 +6,13 @@
 #include <raylib.h>
 
 #include "util.h"
+#include "casm.h"
 
-/* Interpreter Constants */
-#define MAX_LABELS 16
-#define MAX_REGISTERS 9
-#define MEMORY_SIZE 64
-#define STORAGE_SIZE 64
-#define MAX_LABEL_JUMPS 1000
 
-#define CELL_SIZE 1024
-/* Animation Constants */
-#define MAX_FUTURES 256
-#define MAX_ANIMATIONS 256
-#define MAX_STYLE_OVERRIDES 256
 
-// Rendering Constants
-#define HEADER_SIZE 24
-#define TEXT_SIZE 12
-#define SLIDE_IN_TIME 0.5 // Seconds
-#define MEMORY_CELL_SET_VALUE_TIME 1
-#define X_PADDING 40
-#define CELL_EXPAND_PERCENT 1.2
-#define PC_COLOR BLUE
-#define HEADER_GAP 100
-#define REGISTER_CELL_WIDTH 160
-#define REGISTER_CELL_HEIGHT 35
-#define REGISTER_CELL_GAP 0.15
-#define CELL_HEIGHT 65
-#define CELL_WIDTH 250
-#define CELL_GAP 20
-#define SCROLL_SPEED 4
-#define RESET_DELAY 0.1
 const Color BACKGROUND_COLOR = { .r = 0x18, .g = 0x18, .b = 0x18, .a = 0xFF };
 const Color FONT_COLOR = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
 const Color CELL_COLOR = { .r = 0xCA, .g = 0xCC, .b = 0xDE, .a = 0xFF };
-
 
 typedef struct State State;
 typedef struct RenderInfo RenderInfo;
@@ -74,6 +46,7 @@ struct Future {
 	float delay; // Seconds
 	void** reference;
 	void* future_value;
+	void (*callable)(void); 
 };
 
 struct Animation {
@@ -120,14 +93,12 @@ void plug_update();
 // ============
 // Integrating with Interpreter
 // ============
-int GetRegister(int num);
-int SetRegister(int num);
-char* GetMemory(int address);
-char* SetMemory(int address);
-char* GetStorage(int address);
-char* SetStorage(int address);
-int GetPC();
-void SetPC();
+int PlugGetRegister(int reg_num);
+char* PlugGetMemory(int address);
+char* PlugGetStorage(int address);
+void PlugSetRegister(int reg_num, int value);
+void PlugSetMemory(int address, char* value);
+void PlugSetStorage(int address, char* value);
 
 // ============
 // StyleOverrides
@@ -139,7 +110,7 @@ void StyleOverrideDestroy(StyleOverride* style_override);
 // ============
 // Futures
 // ============
-void CreateFuture(float delay, void** reference, void* future_value);
+void CreateFuture(float delay, void** reference, void* future_value, void (*callable)(void));
 void FutureStep(Future* future, float dt);
 void FutureFree(Future* future);
 
@@ -153,11 +124,11 @@ void AnimationFree(Animation* animation);
 // ============
 // Complex Animations
 // ============
-void SetActiveMemoryCell(int cell, EasingFunction easing, float delay);
-void SetActiveStorageCell(int cell, EasingFunction easing, float delay);
-void SetMemoryCellValue(int cell, char* value, float delay);
-void SetRegisterCellValue(int cell, int value, float delay);
-void SetStorageCellValue(int cell, char* value, float delay);
+void SetActiveMemoryCell(int cell, EasingFunction easing, float duration, float delay);
+void SetActiveStorageCell(int cell, EasingFunction easing, float duration, float delay);
+void SetMemoryCellValue(int cell, char* value, float duration, float delay);
+void SetRegisterCellValue(int cell, int value, float duration, float delay);
+void SetStorageCellValue(int cell, char* value, float duration, float delay);
 
 // ============
 // Runners
@@ -187,14 +158,14 @@ char* ErrorMsg = NULL;
 void HandleFileUpload();
 void HandleKeyPresses();
 void ContinueProgram();
-bool StepProgram(); // True if program is finished or errored. Sets char* ErrorMsg on error
+bool PlugStepProgram(); // True if program is finished or errored. Sets char* ErrorMsg on error
 float ResetState();
 
 // ============
 // Misc
 // ============
 float GetMidPoint();
-uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool animate);
+char** FileReadLines(char* filepath, int* num_lines);
 
 // ============
 // Hot Reloading
@@ -202,6 +173,14 @@ uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool an
 static State* s = NULL;
 
 void plug_init(char* filename) {
+	PassUIGettersAndSetters(
+		PlugGetRegister,
+		PlugGetMemory,
+		PlugGetStorage,
+		PlugSetRegister,
+		PlugSetMemory,
+		PlugSetStorage
+	);
 	RenderInfo render_info = {
 		.register_height = GetScreenHeight(),
 		.memory_height = GetScreenHeight(),
@@ -234,7 +213,8 @@ void plug_init(char* filename) {
 
 	s->render_info.storage_pointer.y = mid_y;
 	s->render_info.storage_pointer.x = GetScreenWidth() - X_PADDING - (s->render_info.storage_pointer.width - CELL_WIDTH) / 2 - CELL_WIDTH;
-	LoadFileIntoMemory(filename, s->memory, 0, false);
+	int num_lines;
+	FileReadLines(filename, &num_lines);
 
 	StartVisualisation();
 }
@@ -299,13 +279,14 @@ void StyleOverrideDestroy(StyleOverride* style_override) {
 // -------------
 // Futures 
 // -------------
-void CreateFuture(float delay, void** reference, void* future_value) {
+void CreateFuture(float delay, void** reference, void* future_value, void(*callable)(void)) {
 	RenderInfo* render_info = &s->render_info;
 
 	Future* future = (Future*)malloc(sizeof(Future));
 	future->delay = delay;
 	future->reference = reference;
 	future->future_value = future_value;
+	future->callable = callable;
 	for (size_t i = 0; i < MAX_FUTURES; i++) {
 		if (render_info->futures[i] == NULL) {
 			render_info->futures[i] = future;
@@ -322,7 +303,12 @@ void FutureStep(Future* future, float dt) {
 	if (future->delay > 0) {
 		return;
 	}
-	*future->reference = future->future_value;
+	if (future->callable != NULL) {
+		future->callable();
+	}
+	if (future->reference != NULL) {
+		*future->reference = future->future_value;
+	}
 }
 
 void FutureFree(Future* future) {
@@ -394,42 +380,41 @@ void AnimationFree(Animation* animation) {
 // ============
 // Complex Animations
 // ============
-void SetActiveMemoryCell(int cell, EasingFunction easing, float delay) {
+void SetActiveMemoryCell(int cell, EasingFunction easing, float duration, float delay) {
 	RenderInfo* render_info = &s->render_info;
 	float end = -CELL_HEIGHT*cell - CELL_GAP*cell + GetScreenHeight() / 2 - CELL_HEIGHT / 2;
-	CreateAnimation(end, &render_info->memory_height, easing, SLIDE_IN_TIME, delay, NULL);
+	CreateAnimation(end, &render_info->memory_height, easing, duration, delay, NULL);
 }
 
-void SetActiveStorageCell(int cell, EasingFunction easing, float delay) {
+void SetActiveStorageCell(int cell, EasingFunction easing, float duration, float delay) {
 	RenderInfo* render_info = &s->render_info;
 	float end = -CELL_HEIGHT*cell - CELL_GAP*cell + GetScreenHeight() / 2 - CELL_HEIGHT / 2;
-	CreateAnimation(end, &render_info->storage_height, easing, SLIDE_IN_TIME, delay, NULL);
+	CreateAnimation(end, &render_info->storage_height, easing, duration, delay, NULL);
 }
 
-void SetMemoryCellValue(int cell, char* value, float delay) {
+void SetMemoryCellValue(int cell, char* value, float duration, float delay) {
 	// Set text after delay
-	CreateFuture(delay, (void*)&s->memory[cell], value);
+	CreateFuture(delay, (void*)&s->memory[cell], value, NULL);
 
 	// Grow and shrink cell by a percent
 	StyleOverride* style_override = StyleOverrideCreate(MEMORY_CELL_SIZE_MULTIPLIER, cell, 1);
-	CreateAnimation(CELL_EXPAND_PERCENT, &style_override->style, IN_N_BACK, 1, delay, style_override);
+	CreateAnimation(CELL_EXPAND_PERCENT, &style_override->style, IN_N_BACK, duration, delay, style_override);
 }
 
-void SetStorageCellValue(int cell, char* value, float delay) {
+void SetStorageCellValue(int cell, char* value, float duration, float delay) {
 	// Set text after delay
-	CreateFuture(delay, (void*)&s->storage[cell], value);
+	CreateFuture(delay, (void*)&s->storage[cell], value, NULL);
 
 	// Grow and shrink cell by a percent
 	StyleOverride* style_override = StyleOverrideCreate(STORAGE_CELL_SIZE_MULTIPLIER, cell, 1);
-	CreateAnimation(CELL_EXPAND_PERCENT, &style_override->style, IN_N_BACK, 1, delay, style_override);
+	CreateAnimation(CELL_EXPAND_PERCENT, &style_override->style, IN_N_BACK, duration, delay, style_override);
 
 }
-void SetRegisterCellValue(int cell, int value, float delay) {
+void SetRegisterCellValue(int cell, int value, float duration, float delay) {
 	int* i = (int*)malloc(sizeof(int)); // TODO: Fix leak - Idea: Callback on future completions
 	*i=value;
-	float duration = 1;
 	// Set text after delay
-	CreateFuture(delay+duration/2, (void*)&s->registers[cell], i);
+	CreateFuture(delay+duration/2, (void*)&s->registers[cell], i, NULL);
 
 	// Fade text
 	StyleOverride* style_override = StyleOverrideCreate(REGISTER_FADE, cell, 1);
@@ -443,7 +428,7 @@ void SetRegisterCellValue(int cell, int value, float delay) {
 void StartVisualisation() {
 	RenderInfo* render_info = &s->render_info;
 	Render();
-	SetActiveMemoryCell(0, IN_N_OUT, 0);
+	SetActiveMemoryCell(0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	Run();
 	int gap = REGISTER_CELL_HEIGHT * REGISTER_CELL_GAP;
 	CreateAnimation(
@@ -455,20 +440,7 @@ void StartVisualisation() {
 		NULL
 	);
 	Run();
-	SetActiveStorageCell(0, IN_N_OUT, 0);
-	Run();
-	return;
-	SetActiveMemoryCell(1, IN_N_OUT, 0);
-	Run();
-	SetActiveMemoryCell(0, IN_N_OUT, 0);
-	Run();
-	SetActiveMemoryCell(3, IN_N_OUT, 0);
-	Run();
-	SetStorageCellValue(0, "Goodbye World", 0);
-	Run();
-	SetRegisterCellValue(0, 100, 0);
-	Run();
-	SetMemoryCellValue(0, "Goodbye World", 0);
+	SetActiveStorageCell(0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	Run();
 	return;
 }
@@ -695,6 +667,15 @@ void RenderControls() {
 // ============
 // User Action Handlers
 // ============
+char** program = NULL;
+int num_lines; 
+
+void LoadProgramWrapper() {
+	LoadProgram(
+		program, 
+		num_lines
+	);
+}
 void HandleFileUpload() {
 	if (!IsFileDropped()) {
 		return;
@@ -703,8 +684,9 @@ void HandleFileUpload() {
 	assert(files.count > 0 && "Expected a file to be uploaded");
 	char* file_path = files.paths[0];
 	
-	ResetState();
-	LoadFileIntoMemory(file_path, s->memory, CELL_EXPAND_PERCENT, true);
+	float delay = ResetState();
+	program = FileReadLines(file_path, &num_lines);
+	CreateFuture(.5, NULL, NULL, LoadProgramWrapper);
 	UnloadDroppedFiles(files);
 }
 
@@ -714,33 +696,35 @@ void HandleKeyPresses() {
 	}
 	if (IsKeyPressed(KEY_C)) {
 		ContinueProgram();
+		PrintErrorMsg();
 	}
 	if (IsKeyPressed(KEY_S)) {
-		StepProgram();
+		if (!PlugStepProgram()) {
+			PrintErrorMsg();
+		}
 	}
 }
 
 float ResetState() {
-	SetActiveMemoryCell(0, IN_N_OUT, 0);
-	SetActiveStorageCell(0, IN_N_OUT, 0);
+	SetActiveMemoryCell(0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
+	SetActiveStorageCell(0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	for (int i = 0; i < 4; i++) {
-		SetMemoryCellValue(i, "000000", i*RESET_DELAY);
-		SetStorageCellValue(i, "000000", i*RESET_DELAY);
+		SetMemoryCellValue(i, "000000", RESET_DURATION, i*RESET_DELAY);
+		SetStorageCellValue(i, "000000", RESET_DURATION, i*RESET_DELAY);
 	}
 	for (int i = 0; i < 10; i++) {
-		SetRegisterCellValue(i, 0, i*RESET_DELAY);
+		SetRegisterCellValue(i, 0, RESET_DURATION, i*RESET_DELAY);
 	}
 	return 10 * RESET_DELAY;
 }
 
 void ContinueProgram() {
-	while (!StepProgram()){
+	while (PlugStepProgram()){
 		sleep(1);
 	}
 }
-bool StepProgram() {
-	printf("Step\n");
-	return false;
+bool PlugStepProgram() {
+	return StepProgram();
 }
 
 // ============
@@ -748,7 +732,8 @@ bool StepProgram() {
 // ============
 
 
-uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool animate) {
+char** FileReadLines(char* filepath, int* num_lines) {
+	*num_lines = 0;
 	if (filepath == NULL) {
 		return 0;
 	}
@@ -758,9 +743,10 @@ uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool an
 		exit(1);
 	}
 
-	uint16_t lines = 0;
+	char** lines = malloc(sizeof(char*)*MEMORY_SIZE);
 	int n_read;
 	size_t num_to_read;
+
 	while (1) {
 		char* linep = (char*) malloc(CELL_SIZE);
 		n_read = getline(&linep, &num_to_read, file_p);
@@ -768,12 +754,7 @@ uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool an
 			break;
 		}
 		linep[n_read-1] = '\0';
-		if (animate) {
-			SetMemoryCellValue(lines, linep, delay + RESET_DELAY*lines);
-		} else {
-			s->memory[lines] = linep;
-		}
-		lines++;
+		lines[(*num_lines)++] = linep;
 	}
 	return lines;
 }
@@ -781,4 +762,21 @@ uint16_t LoadFileIntoMemory(char* filepath, char* memory[], float delay, bool an
 float GetMidPoint() {
 	RenderInfo* render_info = &s->render_info;
 	return GetScreenHeight() / 2 - CELL_HEIGHT + CELL_HEIGHT / 2;
+}
+
+int PlugGetRegister(int reg_num) {return *s->registers[reg_num];}
+char* PlugGetMemory(int address) {return s->memory[address/4];}
+char* PlugGetStorage(int address) {return s->storage[address/4];}
+void PlugSetRegister(int reg_num, int value) {
+	if (reg_num == 0) {
+		SetActiveMemoryCell(value, IN_N_OUT, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
+	}
+	SetRegisterCellValue(reg_num, value, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
+}
+void PlugSetMemory(int address, char* value) {
+	SetMemoryCellValue(address/4, value, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
+}
+void PlugSetStorage(int address, char* value) {
+	SetActiveStorageCell(address/4, IN_N_OUT, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
+	SetStorageCellValue(address/4, value, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
 }

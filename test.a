@@ -1,4 +1,4 @@
-STORE R1, =9
-STORE R2, =10
+LOAD R1, =9
+LOAD R2, =10
 ADD R1, R2 ; This is a comment
 WRITE R1, =100
