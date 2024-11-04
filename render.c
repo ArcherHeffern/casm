@@ -54,10 +54,11 @@ void RenderMemory(State* s) {
 	RenderInfo* render_info = &s->render_info;
 	char** memory = s->memory;
 
-	DrawRectangleLinesEx(render_info->memory_pointer, 2.0F, PC_COLOR); // Program Counter
 	for (int i = 0; i < MEMORY_SIZE; i++) {
 		RenderMemoryCell(s, i);
 	}
+
+	DrawRectangleLinesEx(render_info->memory_pointer, 2.0F, PC_COLOR); // Program Counter
 }
 
 void RenderMemoryCell(State* state, int i) {
@@ -84,11 +85,11 @@ void RenderStorage(State* state) {
 	RenderInfo* render_info = &state->render_info;
 	char** storage = state->storage;
 
-	DrawRectangleLinesEx(render_info->storage_pointer, 2.0F, PC_COLOR); 
-
 	for (int i = 0; i < STORAGE_SIZE; i++) {
 		RenderStorageCell(state, i);
 	}
+
+	DrawRectangleLinesEx(render_info->storage_pointer, 2.0F, PC_COLOR); 
 }
 
 void RenderStorageCell(State* state, int i) {
