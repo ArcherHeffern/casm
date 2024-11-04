@@ -119,12 +119,9 @@ bool Step() {
 	}
 	if (IsKeyPressed(KEY_C)) {
 		ContinueProgram();
-		PrintErrorMsg();
 	}
 	if (IsKeyPressed(KEY_S)) {
-		if (!StepProgram()) {
-			PrintErrorMsg();
-		}
+		StepProgram();
 	}
 
 	Render(s);
@@ -323,7 +320,7 @@ void PrintErrorMsg() {
 		printf("Attempted to print error msg when there was no error\n");
 		return;
 	}
-	int pc = GetProgramCounter()-1;
+	int pc = GetProgramCounter();
 	printf("Error at address %d executing '%s'\n", pc*4, UIGetMemory(pc*4));
 	printf("%s\n", GetErrorMsg());
 }

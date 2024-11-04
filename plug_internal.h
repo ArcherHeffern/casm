@@ -162,13 +162,15 @@ bool Step();
 // Renderers
 // ============
 void Render(State*);
-void RenderMemory(State*);
-void RenderMemoryCell(State*, int i);
 void RenderRegisters(State*);
 void RenderRegister(State*, int i);
+void RenderMemory(State*);
+void RenderMemoryCell(State*, int i);
 void RenderStorage(State*);
 void RenderStorageCell(State*, int i);
 void RenderControls(State*);
+void RenderHeader(State*);
+void RenderErrorMsg(State*);
 
 // ============
 // User Action Handlers

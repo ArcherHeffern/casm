@@ -22,7 +22,6 @@ bool RunProgram() {
 
 bool StepProgram() {
 	char* line = UIGetMemory(GetProgramCounter()*4);
-	SetProgramCounter(GetProgramCounter()+1);
 	if (!line) {
 		char* error_msg;
 		asprintf(&error_msg, "Expected instruction but found garbage");
@@ -43,6 +42,9 @@ bool StepProgram() {
 	TokenListFree(token_list);
 
 	bool can_continue = !HasError() && !GetHaltflag();
+	if (can_continue) {
+		SetProgramCounter(GetProgramCounter()+1);
+	}
 	return can_continue;
 }
 
