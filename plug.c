@@ -241,7 +241,7 @@ int GetLabelAddress(char* label_ref) {
 				SetErrorMsg(error_msg);
 			}
 			free(label_ref);
-			return i;
+			return s->label_state.label_locations[i];
 		}
 	}
 	return -1;

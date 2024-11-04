@@ -90,7 +90,9 @@ char** FileReadLines(char* filepath, int* num_lines) {
 		if (n_read <= 0) {
 			break;
 		}
-		linep[n_read-1] = '\0';
+		if (linep[n_read-1] == '\0') {
+			linep[n_read-1] = '\0';
+		}
 		lines[(*num_lines)++] = linep;
 	}
 	return lines;
