@@ -21,6 +21,7 @@ Color BACKGROUND_COLOR = { .r = 0x18, .g = 0x18, .b = 0x18, .a = 0xFF };
 Color FONT_COLOR = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
 Color CELL_COLOR = { .r = 0x2A, .g = 0x2C, .b = 0x2E, .a = 0xFF };
 bool cont = false;
+char* EMPTY_CELL = "000000";
 
 
 void plug_init(char* filename) {
@@ -82,6 +83,12 @@ void plug_update() {
 // ============
 
 void StartVisualisation() {
+	for (int i = 0; i < MEMORY_SIZE; i++) {
+		s->memory[i] = EMPTY_CELL;
+	}
+	for (int i = 0; i < STORAGE_SIZE; i++) {
+		s->storage[i] = EMPTY_CELL;
+	}
 	RenderInfo* render_info = &s->render_info;
 	Render(s);
 	SetActiveMemoryCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
@@ -115,7 +122,7 @@ bool Step() {
 	bool futures_left = StepFutures(s);
 
 	HandleFileUpload();
-	if (IsKeyPressed(KEY_T)) {
+	if (IsKeyPressed(KEY_R)) {
 		Reset();
 	}
 	if (IsKeyPressed(KEY_C)) {
@@ -164,6 +171,7 @@ void HandleFileUpload() {
 	float delay = Reset();
 
 	int num_lines;
+
 	char** program = FileReadLines(file_path, &num_lines);
 	LoadProgram(program, num_lines);
 	UnloadDroppedFiles(files);
@@ -177,21 +185,28 @@ float Reset() {
 		s->error_msg = NULL;
 	}
 
-	LabelState ls = s->label_state;
-	for (int i = 0; i < ls.count; i++) {
-		free(ls.label_names[i]);
-		ls.label_names[i] = NULL;
-		ls.label_locations[i] = 0; 
-		ls.label_jump_counts[i] = 0;
+	LabelState* ls = &s->label_state;
+	
+	for (int i = 0; i < ls->count; i++) {
+		free(ls->label_names[i]);
+		ls->label_names[i] = NULL;
+		ls->label_locations[i] = 0; 
+		ls->label_jump_counts[i] = 0;
 	}
-	ls.count = 0;
+	ls->count = 0;
 	s->haltflag = false;
 
 	SetActiveMemoryCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	SetActiveStorageCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	for (int i = 0; i < 4; i++) {
-		SetMemoryCellValue(s, i, "000000", RESET_DURATION, i*RESET_DELAY);
-		SetStorageCellValue(s, i, "000000", RESET_DURATION, i*RESET_DELAY);
+		SetMemoryCellValue(s, i, EMPTY_CELL, RESET_DURATION, i*RESET_DELAY);
+		SetStorageCellValue(s, i, EMPTY_CELL, RESET_DURATION, i*RESET_DELAY);
+	}
+	for (int i = 4; i < MEMORY_SIZE; i++) {
+		s->memory[i] = EMPTY_CELL;
+	}
+	for (int i = 4; i < STORAGE_SIZE; i++) {
+		s->storage[i] = EMPTY_CELL;
 	}
 	for (int i = 0; i < 10; i++) {
 		SetRegisterCellValue(s, i, 0, RESET_DURATION, i*RESET_DELAY);

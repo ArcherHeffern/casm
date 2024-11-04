@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 	yerp:
 	plug_init(filename);
 	while (!WindowShouldClose()) {
-		if (IsKeyPressed(KEY_R)) {
+		if (IsKeyPressed(KEY_T)) {
 			state = plug_pre_reload();
 			ReloadPlugin();
 			plug_post_reload(state);
