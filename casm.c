@@ -37,13 +37,13 @@ bool StepProgram() {
 	}
 	Scanner scanner = { token_list, 0 };
 
-	ExecuteInstruction(&scanner);
+	int new_pc = ExecuteInstruction(&scanner);
 
 	TokenListFree(token_list);
 
 	bool can_continue = !HasError() && !GetHaltflag();
 	if (can_continue) {
-		SetProgramCounter(GetProgramCounter()+1);
+		SetProgramCounter(new_pc);
 	}
 	return can_continue;
 }
@@ -119,8 +119,9 @@ bool IsAtEnd(Scanner* scanner) {
 // ============
 // Executors
 // ============
-void ExecuteInstruction(Scanner* scanner) {
+int ExecuteInstruction(Scanner* scanner) {
 	TokenType instruction = Advance(scanner)->type;
+	int new_pc = GetProgramCounter() + 1;
 	switch (instruction) {
 		case TOKEN_LOAD:
 			ExecuteLoad(scanner);
@@ -147,7 +148,7 @@ void ExecuteInstruction(Scanner* scanner) {
 			ExecuteInc(scanner);
 			break;
 		case TOKEN_BR:
-			ExecuteBr(scanner);
+			new_pc = ExecuteBr(scanner);
 			break;
 		case TOKEN_BLT:
 		case TOKEN_BGT:
@@ -155,7 +156,7 @@ void ExecuteInstruction(Scanner* scanner) {
 		case TOKEN_BGEQ:
 		case TOKEN_BEQ:
 		case TOKEN_BNEQ:
-			ExecuteConditionalBranch(instruction, scanner);
+			new_pc = ExecuteConditionalBranch(instruction, scanner);
 			break;
 		default: {
 			char* error_msg;
@@ -168,6 +169,7 @@ void ExecuteInstruction(Scanner* scanner) {
 		asprintf(&error_msg, "Too many tokens on this line");
 		SetErrorMsg(error_msg);
 	}
+	return new_pc;
 }
 
 void ExecuteMath(TokenType instruction, Scanner* scanner) {
@@ -243,15 +245,11 @@ void ExecuteWrite(Scanner* scanner) {
 	SetStorage(address, str_value);
 }
 
-void ExecuteBr(Scanner* scanner) {
-	int address = ScanLabelIndex(scanner, true);
-	if (HasError()) {
-		return;
-	}
-	SetProgramCounter(address);
+int ExecuteBr(Scanner* scanner) {
+	return ScanLabelIndex(scanner, true);
 }
 
-void ExecuteConditionalBranch(TokenType jump_type, Scanner* scanner) {
+int ExecuteConditionalBranch(TokenType jump_type, Scanner* scanner) {
 	Register r1 = ScanRegister(scanner);
 	Consume(scanner, TOKEN_COMMA);
 	Register r2 = ScanRegister(scanner);
@@ -282,10 +280,10 @@ void ExecuteConditionalBranch(TokenType jump_type, Scanner* scanner) {
 	}
 	int index = ScanLabelIndex(scanner, jump);
 
-	if (HasError()) {
-		return;
+	if (jump) {
+		return index;
 	}
-	SetProgramCounter(index);
+	return GetProgramCounter()+1;
 }
 // ============
 // Jump Helper
@@ -296,10 +294,9 @@ int ScanLabelIndex(Scanner* scanner, bool increment_count) {
 		return 0;
 	}
 
-	char* label_ref;
+	char* label_ref = NULL;
 	asprintf(&label_ref, "%.*s", token->length, token->literal);
 	int address = GetLabelAddress(label_ref);
-	free(label_ref);
 	if (address != -1) {
 		return address;
 	}

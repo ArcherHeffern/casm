@@ -19,15 +19,15 @@ Token* Peek(Scanner* scanner);
 Token* Prev(Scanner* scanner);
 bool IsAtEnd(Scanner* scanner);
 // Executors
-void ExecuteInstruction(Scanner* scanner);
+int ExecuteInstruction(Scanner* scanner); // Returns new program counter
 void ExecuteMath(TokenType instruction, Scanner* scanner);
 void ExecuteInc(Scanner* scanner);
 void ExecuteLoad(Scanner* scanner);
 void ExecuteStore(Scanner* scanner);
 void ExecuteRead(Scanner* scanner);
 void ExecuteWrite(Scanner* scanner);
-void ExecuteBr(Scanner* scanner);
-void ExecuteConditionalBranch(TokenType instruction, Scanner* scanner);
+int ExecuteBr(Scanner* scanner);
+int ExecuteConditionalBranch(TokenType instruction, Scanner* scanner);
 // Jump Helper
 int ScanLabelIndex(Scanner* scanner, bool increment_count);
 // Addressing Combinations

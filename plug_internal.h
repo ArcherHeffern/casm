@@ -178,7 +178,6 @@ void RenderErrorMsg(State*);
 bool LoadProgram(char** program, int num_lines);
 void HandleFileUpload();
 void HandleKeyPresses(State*);
-void ContinueProgram();
 float Reset();
 
 #endif // PLUG_INTERNAL_H_

@@ -20,6 +20,7 @@ char* ErrorMsg = NULL;
 Color BACKGROUND_COLOR = { .r = 0x18, .g = 0x18, .b = 0x18, .a = 0xFF };
 Color FONT_COLOR = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
 Color CELL_COLOR = { .r = 0xCA, .g = 0xCC, .b = 0xDE, .a = 0xFF };
+bool cont = false;
 
 
 void plug_init(char* filename) {
@@ -118,10 +119,13 @@ bool Step() {
 		Reset();
 	}
 	if (IsKeyPressed(KEY_C)) {
-		ContinueProgram();
+		cont = !cont;
 	}
-	if (IsKeyPressed(KEY_S)) {
-		StepProgram();
+	if (IsKeyPressed(KEY_S) || cont) {
+		if (animations_left || futures_left) {
+		} else {
+			StepProgram();
+		}
 	}
 
 	Render(s);
@@ -167,6 +171,7 @@ void HandleFileUpload() {
 
 
 float Reset() {
+	cont = false;
 	if (s->error_msg) {
 		free(s->error_msg);
 		s->error_msg = NULL;
@@ -192,12 +197,6 @@ float Reset() {
 		SetRegisterCellValue(s, i, 0, RESET_DURATION, i*RESET_DELAY);
 	}
 	return 10 * RESET_DELAY;
-}
-
-void ContinueProgram() {
-	while (StepProgram()){
-		sleep(1);
-	}
 }
 
 // ============

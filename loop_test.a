@@ -1,0 +1,6 @@
+        LOAD R1, =0
+        LOAD R2, =10
+Label: 	BGEQ R1, R2, Label2 
+        INC R1 
+        BR Label
+Label2:	HALT
