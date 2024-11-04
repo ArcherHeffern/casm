@@ -17,5 +17,6 @@ int MaxInt(int a, int b);
 int BoundInt(int v, int lower, int upper);
 float ParametricBlend(float t);
 float SinInAndBack(float t);
+char** FileReadLines(char* filepath, int* num_lines);
 
 #endif

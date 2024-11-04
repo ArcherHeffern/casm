@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
-#define PI 3.141592653589
+#include "plug_internal.h"
 
 bool IsWhitespace(char c) {
 	return c == ' ' || c == '\n' || c == '\t' || c == '\r';
@@ -69,6 +69,32 @@ float SinInAndBack(float t) {
 	return sinf(t*PI);
 }
 
+char** FileReadLines(char* filepath, int* num_lines) {
+	*num_lines = 0;
+	if (filepath == NULL) {
+		return 0;
+	}
+	FILE* file_p;
+	if ((file_p = fopen(filepath, "r")) < 0) {
+		perror("Open file: ");
+		exit(1);
+	}
+
+	char** lines = malloc(sizeof(char*)*MEMORY_SIZE);
+	int n_read;
+	size_t num_to_read;
+
+	while (1) {
+		char* linep = (char*) malloc(CELL_SIZE);
+		n_read = getline(&linep, &num_to_read, file_p);
+		if (n_read <= 0) {
+			break;
+		}
+		linep[n_read-1] = '\0';
+		lines[(*num_lines)++] = linep;
+	}
+	return lines;
+}
 
 
 /*

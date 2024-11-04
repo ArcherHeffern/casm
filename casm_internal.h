@@ -29,7 +29,7 @@ void ExecuteWrite(Scanner* scanner);
 void ExecuteBr(Scanner* scanner);
 void ExecuteConditionalBranch(TokenType instruction, Scanner* scanner);
 // Jump Helper
-int ScanLabelIndex(Scanner* scanner);
+int ScanLabelIndex(Scanner* scanner, bool increment_count);
 // Addressing Combinations
 int ScanLoadValue(Scanner* scanner);
 int ScanStoreAddress(Scanner* scanner);
@@ -44,7 +44,6 @@ int ScanRelativeAddress(Scanner* scanner);
 Register ScanRegister(Scanner* scanner);
 int ScanNumberValue(Scanner* scanner);
 // Getters
-int GetProgramCounter();
 int GetRegister(int reg_num);
 int GetMemory(int address);
 int GetStorage(int address);

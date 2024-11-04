@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <dlfcn.h>
 
-#include "plug.h"
+#include "plug_main.h"
 
 
 void* libplug = NULL;
