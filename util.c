@@ -1,6 +1,8 @@
 #include "util.h"
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
+#define PI 3.141592653589
 
 bool IsWhitespace(char c) {
 	return c == ' ' || c == '\n' || c == '\t' || c == '\r';
@@ -31,6 +33,43 @@ char* IntToString(int i) {
 	asprintf(&s, "%i", i);
 	return s;
 }
+
+int MinInt(int a, int b) {
+	return a < b ? a: b;
+}
+
+double MinDouble(double a, double b) {
+	return a < b ? a: b;
+}
+
+float MinFloat(float a, float b) {
+	return a < b? a: b;
+}
+
+float MaxFloat(float a, float b) {
+	return a > b? a: b;
+}
+
+int MaxInt(int a, int b) {
+	return a > b ? a: b;
+}
+
+int BoundInt(int v, int lower, int upper) {
+	return MaxInt(MinInt(v, upper), lower);
+}
+
+float ParametricBlend(float t) {
+	// Source: https://stackoverflow.com/questions/13462001/ease-in-and-ease-out-animation-formula
+    float sqr = t * t;
+    return sqr / (2.0f * (sqr - t) + 1.0f);
+}
+
+float SinInAndBack(float t) {
+	// Divinely Inspired (Tsoding)
+	return sinf(t*PI);
+}
+
+
 
 /*
 int main() {
