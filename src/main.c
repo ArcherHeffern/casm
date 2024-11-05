@@ -17,8 +17,6 @@ int main(int argc, char** argv) {
 		filename = argv[1];
 	}
 
-	InitWindow(800, 600, "Mini Asm");	
-	SetTargetFPS(60);
 	Run(filename);
 }
 
