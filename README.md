@@ -22,12 +22,12 @@ NOTE: I have not yet tested the windows and linux targets. Let me know if you ru
 
 # Instruction Set Overview
 ## Syntax Definitions
-<label>: 		One or more letters postfixed with a colon (e.g., LOOP:, END:)
-<label_ref>: 	One of more letters (e.g., START, ACCUMULATE)
-<register>: 	R<number> (e.g., R1, R2).
-<- : 			Assignment
-address : 		An address must be a multiple of 4 (since each cell is 4 bytes), and can be an expression of numbers and the values of registers
-M[address]: 	Memory access at address (Can be used on either side of assignment)
+\<label\>: 		One or more letters postfixed with a colon (e.g., LOOP:, END:)  
+<label_ref>: 	One of more letters (e.g., START, ACCUMULATE)  
+<register>: 	R<number> (e.g., R1, R2).  
+<- : 			Assignment  
+address : 		An address must be a multiple of 4 (since each cell is 4 bytes), and can be an expression of numbers and the values of registers  
+M[address]: 	Memory access at address (Can be used on either side of assignment)  
 
 ## Load Instructions
 Direct Load
