@@ -39,7 +39,8 @@ $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
 # Build Raylib from source
-raylib:
+raylib: $(RAYLIB_SRC_DIR)/libraylib.a
+$(RAYLIB_SRC_DIR)/libraylib.a:
 	cd $(RAYLIB_SRC_DIR) && $(MAKE) PLATFORM=PLATFORM_DESKTOP
 
 # Distribution target for macOS

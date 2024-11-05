@@ -10,8 +10,8 @@ void Render(State* s) {
 		RenderMemory(s);
 		RenderRegisters(s);
 		RenderStorage(s);
-		RenderControls(s);
 		RenderHeader();
+		RenderControls(s);
 		RenderErrorMsg();
 	EndDrawing();
 }
@@ -109,47 +109,39 @@ void RenderStorageCell(State* state, int i) {
 }
 
 void RenderControls(State* state) {
-	RenderInfo* render_info = &state->render_info;
+	float gap = REGISTER_CELL_WIDTH * REGISTER_CELL_GAP * 0.5;
+	int right = GetScreenWidth()/2 + gap; 
+	int left =GetScreenWidth()/2 - REGISTER_CELL_WIDTH/2;
+	int bottom = GetScreenHeight() - (REGISTER_CELL_HEIGHT + REGISTER_CELL_GAP) * 12 - 20;
+	int top = bottom - REGISTER_CELL_HEIGHT;
+
 
 	char* instruction = "Drag assembly file to upload";
 	Vector2 textSize = MeasureTextEx(GetFontDefault(), instruction, TEXT_SIZE, 1);
-	DrawText(instruction, GetScreenWidth()/2 - textSize.x/2, HEADER_GAP, TEXT_SIZE, FONT_COLOR);
+	DrawText(instruction, GetScreenWidth()/2 - textSize.x/2, top - REGISTER_CELL_HEIGHT*.75, TEXT_SIZE, FONT_COLOR);
 	
+	RenderButton(state, left, top, "(S)tep");
+	RenderButton(state, right, top, "(C)ontinue");
+	RenderButton(state, left, bottom, "(R)eset");
+	RenderButton(state, right, bottom, "(E)nd");
+}
+
+void RenderButton(State* state, int x, int y, char* text) {
+	RenderInfo* render_info = &state->render_info;
 	float width = REGISTER_CELL_WIDTH/2 * (1-REGISTER_CELL_GAP);
-	float height = REGISTER_CELL_HEIGHT + REGISTER_CELL_GAP;
-	float gap = REGISTER_CELL_WIDTH * REGISTER_CELL_GAP * 0.5;
-	Rectangle continue_button = {
-		.x=GetScreenWidth()/2 + gap,
-		.y=(HEADER_GAP + textSize.y) * (1+REGISTER_CELL_GAP),
+	float height = REGISTER_CELL_HEIGHT*0.75;
+	Rectangle button = {
+		.x=x,
+		.y=y,
 		.width=width,
 		.height=height
 	};
-	DrawRectangleRec(continue_button, render_info->button_color);
-
-	char* continue_text = "(C)ontinue";
-	textSize = MeasureTextEx(GetFontDefault(), continue_text, TEXT_SIZE, 1);
+	DrawRectangleRec(button, render_info->button_color);
+	Vector2 textSize = MeasureTextEx(GetFontDefault(), text, TEXT_SIZE, 1);
 	DrawText(
-		continue_text, 
-		continue_button.x+continue_button.width/2-textSize.x/2, 
-		continue_button.y+continue_button.height/2-textSize.y/2, 
-		TEXT_SIZE, 
-		FONT_COLOR
-	);
-	
-	Rectangle step_button = {
-		.x=GetScreenWidth()/2 - REGISTER_CELL_WIDTH/2,
-		.y=(HEADER_GAP + textSize.y) * (1+REGISTER_CELL_GAP),
-		.width=width,
-		.height=height,
-	};
-	DrawRectangleRec(step_button, render_info->button_color);
-
-	char* step_text = "(S)tep";
-	textSize = MeasureTextEx(GetFontDefault(), step_text, TEXT_SIZE, 1);
-	DrawText(
-		step_text, 
-		step_button.x+step_button.width/2-textSize.x/2, 
-		step_button.y+step_button.height/2-textSize.y/2, 
+		text, 
+		button.x+button.width/2-textSize.x/2, 
+		button.y+button.height/2-textSize.y/2, 
 		TEXT_SIZE, 
 		FONT_COLOR
 	);

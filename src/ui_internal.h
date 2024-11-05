@@ -168,6 +168,7 @@ void RenderMemoryCell(State*, int i);
 void RenderStorage(State*);
 void RenderStorageCell(State*, int i);
 void RenderControls(State*);
+void RenderButton(State*, int x, int y, char* text);
 void RenderHeader();
 void RenderErrorMsg();
 
