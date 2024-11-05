@@ -181,7 +181,7 @@ void ExecuteMath(TokenType instruction, Scanner* scanner) {
 	}
 	int op1 = GetRegister(r1.index);
 	int op2 = GetRegister(r2.index);
-	unsigned int result = 0;
+	int result = 0;
 	if (instruction == TOKEN_ADD) {
 		result = op1 + op2;
 	} else if (instruction == TOKEN_SUB) {
@@ -190,10 +190,10 @@ void ExecuteMath(TokenType instruction, Scanner* scanner) {
 		result = op1 * op2;
 	} else { // TOKEN_DIV
 		result = op1 / op2;
-		unsigned int second_result = op1%op2;
-		SetRegister(r2.index, (int)second_result);
+		int second_result = op1%op2;
+		SetRegister(r2.index, MaxInt(second_result, 0));
 	}
-	SetRegister(r1.index, (int)result);
+	SetRegister(r1.index, MaxInt(result, 0));
 }
 
 void ExecuteInc(Scanner* scanner) {
