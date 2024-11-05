@@ -1,6 +1,4 @@
-raylib-5.0_macos
 main
-casm
-lexer
-out
-preprocess
+obj
+.DS_Store
+raylib-5.0_macos
