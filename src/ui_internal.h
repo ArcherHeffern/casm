@@ -58,7 +58,8 @@ struct RenderInfo {
 	double memory_height;
 	double storage_height;
 	Rectangle memory_pointer; // Program Counter
-	Rectangle storage_pointer; 
+	Rectangle storage_pointer; // Active Storage Box
+	int last_modified_storage_cell;
 
 	Future* futures[MAX_FUTURES];
 	Animation* animations[MAX_ANIMATIONS]; 

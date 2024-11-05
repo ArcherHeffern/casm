@@ -20,6 +20,7 @@ Color BACKGROUND_COLOR = { .r = 0x18, .g = 0x18, .b = 0x18, .a = 0xFF };
 Color FONT_COLOR = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
 Color CELL_COLOR = { .r = 0x2A, .g = 0x2C, .b = 0x2E, .a = 0xFF };
 bool cont = false;
+bool end = false;
 char* EMPTY_CELL = "000000";
 
 int FD = -1;
@@ -34,19 +35,20 @@ void Run(char* filename) {
 		.register_height = GetScreenHeight(),
 		.memory_height = GetScreenHeight(),
 		.storage_height = GetScreenHeight(),
-		.memory_pointer = {
+		.memory_pointer = { // Program Counter Box
 			.x = 0,
 			.y = 0,
 			.width = 270,
 			.height = 85
 		},
-		.storage_pointer = {
+		.storage_pointer = { // Active Storage Box
 			.x = 0,
 			.y = 0,
 			.width = 270,
 			.height = 85
 		},
 	};
+
 
 	s = malloc(sizeof(State));
 	assert(s != NULL);
@@ -144,13 +146,26 @@ bool Step() {
 		Reset();
 	}
 	if (IsKeyPressed(KEY_C)) {
+		end = false;
 		cont = !cont;
 	}
-	if (IsKeyPressed(KEY_S) || cont) {
+	if (IsKeyPressed(KEY_E)) {
+		end = true;
+	}
+	if (IsKeyPressed(KEY_S) || cont || end) {
 		if (animations_left || futures_left) {
 		} else {
 			StepProgram();
 		}
+	}
+
+	if (HasError() || GetHaltflag()) {
+		if (end) {
+			SetActiveMemoryCell(s, *s->registers[0], IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
+			SetActiveStorageCell(s, s->render_info.last_modified_storage_cell, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
+			end = false;
+		}
+		cont = false;
 	}
 
 	Render(s);
@@ -209,6 +224,8 @@ void HandleFileUpload() {
 
 float Reset() {
 	cont = false;
+	end = false;
+	s->render_info.last_modified_storage_cell = 0;
 	FD = -1;
 	if (FILE_PATH != NULL) {
 		free(FILE_PATH);
@@ -263,6 +280,16 @@ char* UIGetStorage(int address) {return s->storage[address/4];}
 
 
 void UISetRegister(int reg_num, int value) {
+	if (end) {
+		int* v = malloc(sizeof(int)); // TODO: Fix memory leak
+		if (v == NULL) {
+			printf("Out of memory!\n");
+			exit(1);
+		}
+		*v = value;
+		s->registers[reg_num] = v;
+		return;
+	}
 	if (reg_num == 0) {
 		SetActiveMemoryCell(s, value, IN_N_OUT, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
 	}
@@ -271,11 +298,20 @@ void UISetRegister(int reg_num, int value) {
 
 
 void UISetMemory(int address, char* value) {
+	if (end) {
+		s->memory[address/4] = value;
+		return;
+	}
 	SetMemoryCellValue(s, address/4, value, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
 }
 
 
 void UISetStorage(int address, char* value) {
+	if (end) {
+		s->render_info.last_modified_storage_cell = address/4;
+		s->storage[address/4] = value;
+		return;
+	}
 	SetActiveStorageCell(s, address/4, IN_N_OUT, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
 	SetStorageCellValue(s, address/4, value, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
 }
