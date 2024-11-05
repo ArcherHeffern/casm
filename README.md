@@ -1,12 +1,13 @@
 # Brandeis Operating Systems MiniASM Interpreter and Visualizer
 ## Features
 - Drag and drop a file in
-- Stepping
-- Continuing
-- Reset Program
+- Single (S)tepping
+- (C)ontinuing
+- Jump to (E)nd
+- (R)eset Program
 - Somewhat descriptive error reporting
 - Automatically detects changes to active assembly program, and reloads with new changes
-- Smooth animations
+- Smooth animations, UI, and UX
 
 ## Getting Started
 1. Install precompiled binaries from releases
