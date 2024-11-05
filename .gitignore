@@ -1,4 +1,5 @@
 main
 obj
+dist
 .DS_Store
 raylib-5.0_macos
