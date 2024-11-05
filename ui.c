@@ -8,14 +8,9 @@
 #include "util.h"
 #include "casm.h"
 #include "preprocess.h"
-#include "plug_internal.h"
+#include "ui_internal.h"
 
-
-// ============
-// Hot Reloading
-// ============
 static State* s = NULL;
-
 char* ErrorMsg = NULL;
 Color BACKGROUND_COLOR = { .r = 0x18, .g = 0x18, .b = 0x18, .a = 0xFF };
 Color FONT_COLOR = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
@@ -24,7 +19,9 @@ bool cont = false;
 char* EMPTY_CELL = "000000";
 
 
-void plug_init(char* filename) {
+void Run(char* filename) {
+	InitWindow(800, 600, "Mini Asm");	
+	SetTargetFPS(60);
 	RenderInfo render_info = {
 		.register_height = GetScreenHeight(),
 		.memory_height = GetScreenHeight(),
@@ -61,22 +58,12 @@ void plug_init(char* filename) {
 	int num_lines;
 
 	FileReadLines(filename, &num_lines);
+
 	StartVisualisation();
+	while (!WindowShouldClose()) {
+		Loop();
+	}
 }
-
-State* plug_pre_reload() {
-	return s;
-}
-
-void plug_post_reload(void* state) {
-	s = (State*)state;
-}
-
-void plug_update() {
-	Step();
-}
-
-
 
 // ============
 // Runners
@@ -92,7 +79,7 @@ void StartVisualisation() {
 	RenderInfo* render_info = &s->render_info;
 	Render(s);
 	SetActiveMemoryCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
-	Run();
+	Loop();
 	int gap = REGISTER_CELL_HEIGHT * REGISTER_CELL_GAP;
 	CreateAnimation(
 		s,
@@ -103,13 +90,13 @@ void StartVisualisation() {
 		0,
 		NULL
 	);
-	Run();
+	Loop();
 	SetActiveStorageCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
-	Run();
+	Loop();
 	return;
 }
 
-void Run() {
+void Loop() {
 	while (!WindowShouldClose()) {
 		if (!Step()) {
 			return;
@@ -168,7 +155,7 @@ void HandleFileUpload() {
 	assert(files.count > 0 && "Expected a file to be uploaded");
 	char* file_path = files.paths[0];
 	
-	float delay = Reset();
+	Reset();
 
 	int num_lines;
 

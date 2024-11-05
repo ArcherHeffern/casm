@@ -1,8 +1,9 @@
-#include "util.h"
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
-#include "plug_internal.h"
+#include <stdlib.h>
+
+#include "ui_internal.h"
 
 bool IsWhitespace(char c) {
 	return c == ' ' || c == '\n' || c == '\t' || c == '\r';

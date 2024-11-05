@@ -1,10 +1,10 @@
-#ifndef PLUG_INTERNAL_H_
-#define PLUG_INTERNAL_H_
+#ifndef UI_INTERNAL_H_
+#define UI_INTERNAL_H_
 
 #include <stdlib.h>
 
 #include "raylib.h"
-#include "plug.h"
+#include "ui.h"
 #include "util.h"
 
 extern Color BACKGROUND_COLOR;
@@ -13,7 +13,6 @@ extern Color CELL_COLOR;
 extern char* ErrorMsg;
 
 
-#define CELL_SIZE 1024
 /* Animation Constants */
 #define MAX_FUTURES 256
 #define MAX_ANIMATIONS 256
@@ -154,7 +153,7 @@ void SetStorageCellValue(State*, int cell, char* value, float duration, float de
 // ============
 // Runners
 // ============
-void Run();
+void Loop();
 void StartVisualisation();
 bool Step();
 
@@ -169,8 +168,8 @@ void RenderMemoryCell(State*, int i);
 void RenderStorage(State*);
 void RenderStorageCell(State*, int i);
 void RenderControls(State*);
-void RenderHeader(State*);
-void RenderErrorMsg(State*);
+void RenderHeader();
+void RenderErrorMsg();
 
 // ============
 // User Action Handlers
@@ -180,4 +179,4 @@ void HandleFileUpload();
 void HandleKeyPresses(State*);
 float Reset();
 
-#endif // PLUG_INTERNAL_H_
+#endif // UI_INTERNAL_H_

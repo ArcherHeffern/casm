@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "plug_internal.h"
+#include "ui_internal.h"
 
 
 void CreateAnimation(State* state, double end, double* value, EasingFunction easing, float duration, float delay, StyleOverride* style_override) {
@@ -24,7 +24,7 @@ void CreateAnimation(State* state, double end, double* value, EasingFunction eas
 	assert(false && "Animation queue is full");
 }
 
-static void AnimationStep(State* state, Animation* animation, float dt) {
+static void StepAnimation(Animation* animation, float dt) {
 	if (animation->delay > 0) {
 		float remaining_time = animation->delay - dt;
 		animation->delay = MaxFloat(0, remaining_time);
@@ -79,7 +79,7 @@ bool StepAnimations(State* state) {
 			animations[i] = NULL;
 			AnimationFree(state, animation);
 		} else {
-			AnimationStep(state, animation, dt);
+			StepAnimation(animation, dt);
 		}
 
 	}

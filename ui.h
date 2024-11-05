@@ -1,6 +1,6 @@
 
-#ifndef PLUG_H_
-#define PLUG_H_
+#ifndef UI_H_
+#define UI_H_
 
 /* Interpreter Constants */
 #define MEMORY_SIZE 64
@@ -8,7 +8,9 @@
 #define MAX_REGISTERS 9
 #define MAX_LABEL_JUMPS 1000
 #define MAX_LABELS 16
+#define CELL_SIZE 1024
 
+void Run(char* filename);
 
 int GetProgramCounter();
 int UIGetRegister(int reg_num);
@@ -33,4 +35,4 @@ void PrintMemoryRange(int lower, int upper);
 char* PrintJumpLabelBreakdown();
 void PrintErrorMsg();
 
-#endif // PLUG_H_
+#endif // UI_H_

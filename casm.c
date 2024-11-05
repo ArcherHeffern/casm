@@ -7,7 +7,7 @@
 #include "lexer.h"
 #include "util.h"
 #include "casm.h"
-#include "plug.h"
+#include "ui.h"
 #include "casm_internal.h"
 
 
@@ -181,14 +181,14 @@ void ExecuteMath(TokenType instruction, Scanner* scanner) {
 	}
 	int op1 = GetRegister(r1.index);
 	int op2 = GetRegister(r2.index);
-	unsigned int result;
+	unsigned int result = 0;
 	if (instruction == TOKEN_ADD) {
 		result = op1 + op2;
 	} else if (instruction == TOKEN_SUB) {
 		result = op1 - op2;
 	} else if (instruction == TOKEN_MUL) {
 		result = op1 * op2;
-	} else if (instruction == TOKEN_DIV) {
+	} else { // TOKEN_DIV
 		result = op1 / op2;
 		unsigned int second_result = op1%op2;
 		SetRegister(r2.index, (int)second_result);
@@ -447,7 +447,7 @@ int ScanRelativeAddress(Scanner* scanner) {
 Register ScanRegister(Scanner* scanner) {
 	// From R1->5 returns { .index=1, .value=.5 }
 	Token* register_token = Consume(scanner, TOKEN_REGISTER);
-	Register r;
+	Register r = { 0 };
 	if (!register_token) {
 		return r;
 	}

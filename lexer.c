@@ -70,7 +70,7 @@ void ScannerScanIdentifier();
 void ScannerSkipWhitespace();
 
 Token* tokens[MAX_TOKENS];
-size_t num_tokens;
+int num_tokens;
 Scanner* scanner = NULL;
 
 void ScannerInit(char* s) {

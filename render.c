@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "plug_internal.h"
+#include "ui_internal.h"
 
 // ============
 // Rendering
@@ -11,14 +11,12 @@ void Render(State* s) {
 		RenderRegisters(s);
 		RenderStorage(s);
 		RenderControls(s);
-		RenderHeader(s);
-		RenderErrorMsg(s);
+		RenderHeader();
+		RenderErrorMsg();
 	EndDrawing();
 }
 
 void RenderRegisters(State* state) {
-	RenderInfo* render_info = &state->render_info;
-
 	for (int i = 0; i < 10; i++) {
 		RenderRegister(state, i);
 	}
@@ -26,7 +24,6 @@ void RenderRegisters(State* state) {
 
 void RenderRegister(State* state, int i) {
 	RenderInfo* render_info = &state->render_info;
-
 	int x = GetScreenWidth() / 2 - (REGISTER_CELL_WIDTH/2);
 	int gap = REGISTER_CELL_HEIGHT*REGISTER_CELL_GAP;
 	int y = render_info->register_height + i*(REGISTER_CELL_HEIGHT+gap);
@@ -52,7 +49,6 @@ void RenderRegister(State* state, int i) {
 
 void RenderMemory(State* s) {
 	RenderInfo* render_info = &s->render_info;
-	char** memory = s->memory;
 
 	for (int i = 0; i < MEMORY_SIZE; i++) {
 		RenderMemoryCell(s, i);
@@ -83,7 +79,6 @@ void RenderMemoryCell(State* state, int i) {
 
 void RenderStorage(State* state) {
 	RenderInfo* render_info = &state->render_info;
-	char** storage = state->storage;
 
 	for (int i = 0; i < STORAGE_SIZE; i++) {
 		RenderStorageCell(state, i);
@@ -160,9 +155,7 @@ void RenderControls(State* state) {
 	);
 }
 
-void RenderHeader(State* state) {
-	RenderInfo* render_info = &state->render_info;
-
+void RenderHeader() {
 	DrawRectangle(0, 0, GetScreenWidth(), HEADER_GAP, BACKGROUND_COLOR);
 
 	float textWidth = MeasureTextEx(GetFontDefault(), "Registers", HEADER_SIZE, 1).x;
@@ -176,7 +169,7 @@ void RenderHeader(State* state) {
 	
 }
 
-void RenderErrorMsg(State* state) {
+void RenderErrorMsg() {
 	if (!HasError()) {
 		return;
 	}
