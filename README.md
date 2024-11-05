@@ -22,7 +22,7 @@ NOTE: I have not yet tested the windows and linux targets. Let me know if you ru
 
 # Instruction Set Overview
 ## Syntax Definitions
-\\<label\\>: 		One or more letters postfixed with a colon (e.g., LOOP:, END:)  
+\<label\>: 		One or more letters postfixed with a colon (e.g., LOOP:, END:)  
 \<label_ref\>: 	One of more letters (e.g., START, ACCUMULATE)  
 \<register\>: 	R\<number\> (e.g., R1, R2).  
 \<- : 			Assignment  
