@@ -1,4 +1,8 @@
+#include <time.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +21,10 @@ Color FONT_COLOR = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
 Color CELL_COLOR = { .r = 0x2A, .g = 0x2C, .b = 0x2E, .a = 0xFF };
 bool cont = false;
 char* EMPTY_CELL = "000000";
+
+int FD = -1;
+char* FILE_PATH = NULL;
+struct timespec LAST_MODIFICATION = { 0 };
 
 
 void Run(char* filename) {
@@ -104,11 +112,34 @@ void Loop() {
 	}
 }
 
+bool FileHasChanged() {
+	if (FD == -1) {
+		return false;
+	}
+	struct stat buf;
+	if (fstat(FD, &buf) == -1) {
+		perror("Fstat");
+	}
+	bool modified = false;
+	if (buf.st_mtimespec.tv_sec != LAST_MODIFICATION.tv_sec 
+		|| buf.st_mtimespec.tv_nsec != LAST_MODIFICATION.tv_nsec) {
+		modified = true;
+	}
+	LAST_MODIFICATION = buf.st_mtimespec;
+	return modified;
+}
+
 bool Step() {
 	bool animations_left = StepAnimations(s);
 	bool futures_left = StepFutures(s);
 
 	HandleFileUpload();
+
+	if (FileHasChanged()) {
+		int num_lines = 0;
+		char** program = FileReadLines(FILE_PATH, &num_lines);
+		LoadProgram(program, num_lines);
+	}
 	if (IsKeyPressed(KEY_R)) {
 		Reset();
 	}
@@ -153,20 +184,36 @@ void HandleFileUpload() {
 	}
 	FilePathList files = LoadDroppedFiles();
 	assert(files.count > 0 && "Expected a file to be uploaded");
-	char* file_path = files.paths[0];
-	
+
 	Reset();
 
-	int num_lines;
+	asprintf(&FILE_PATH, "%s", files.paths[0]);
 
-	char** program = FileReadLines(file_path, &num_lines);
+	int num_lines;
+	char** program = FileReadLines(FILE_PATH, &num_lines);
 	LoadProgram(program, num_lines);
+
+	if ((FD = open(FILE_PATH, O_RDONLY)) == -1) {
+		char* error_msg;
+		asprintf(&error_msg, "Failed to open file %s", FILE_PATH);
+		SetErrorMsg(error_msg);
+		return;
+	}
+	struct stat buf;
+	fstat(FD, &buf);
+	LAST_MODIFICATION = buf.st_mtimespec;
+	
 	UnloadDroppedFiles(files);
 }
 
 
 float Reset() {
 	cont = false;
+	FD = -1;
+	if (FILE_PATH != NULL) {
+		free(FILE_PATH);
+		FILE_PATH = NULL;
+	}
 	if (s->error_msg) {
 		free(s->error_msg);
 		s->error_msg = NULL;
