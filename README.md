@@ -12,25 +12,25 @@
 - Smooth animations, UI, and UX
 
 ## Getting Started
-1. Install precompiled binaries from releases
+1. Install precompiled binaries from releases  
 Run on the command line `./casm [assembly_program]`
 
 2. Build from source
 ``` bash
 	git clone https://github.com/ArcherHeffern/casm.git
-	make macos|windows|linux
+	make [macos|windows|linux]
 	./main [assembly_program]
 ```
 NOTE: I have not yet tested the windows and linux targets. Let me know if you run into any issues running these
 
 # Instruction Set Overview
 ## Syntax Definitions
-\<label\>: 		One or more letters postfixed with a colon (e.g., LOOP:, END:)  
-\<label_ref\>: 	One of more letters (e.g., START, ACCUMULATE)  
-\<register\>: 	R\<number\> (e.g., R1, R2).  
-\<- : 			Assignment  
-address : 		An address must be a multiple of 4 (since each cell is 4 bytes), and can be an expression of numbers and the values of registers  
-M[address]: 	Memory access at address (Can be used on either side of assignment)  
+\<label\>: One or more letters postfixed with a colon (e.g., LOOP:, END:)  
+\<label_ref\>: One of more letters (e.g., START, ACCUMULATE)  
+\<register\>: R\<number\> (e.g., R1, R2).  
+\<- : Assignment  
+address : An address must be a multiple of 4 (since each cell is 4 bytes), and can be an expression of numbers and the values of registers  
+M[address]: Memory access at address (Can be used on either side of assignment)  
 
 ## Load Instructions
 Direct Load
