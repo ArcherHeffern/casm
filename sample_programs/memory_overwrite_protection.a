@@ -1,0 +1,3 @@
+LOAD R1, =0
+LOAD R2, R1
+HALT
