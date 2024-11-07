@@ -107,6 +107,19 @@ int GetLabelAddress(char* label_ref) {
 	return -1;
 }
 
+char* GetLabelName(int addr) {
+	LabelState* ls = &s->label_state;
+	if (ls == NULL) {
+		return NULL;
+	}
+	for (int i = 0; i < ls->count; i++) {
+		if (ls->label_locations[i] == addr/4) {
+			return ls->label_names[i];
+		}
+	}
+	return NULL;
+}
+
 /*
 int main() {
 	int num_lines = 5;

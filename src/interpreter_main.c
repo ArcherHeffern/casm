@@ -60,6 +60,7 @@ int main(int argc, char** argv) {
         const char* memory = i<MEMORY_SIZE&&UIGetMemory(i*4)?UIGetMemory(i*4):EMPTY_CELL; 
         const char* storage = i<STORAGE_SIZE&&UIGetStorage(i*4)?UIGetStorage(i*4):EMPTY_CELL;
         bool compress_this_line = memory == EMPTY_CELL && storage == EMPTY_CELL;
+        char* label_name = GetLabelName(i*4);
         if (!compress_this_line) {
             fprintf(f, "%0*d%-*s%-*s%-*s%-*s\n", 
                 SHORT_WIDTH,
@@ -67,7 +68,7 @@ int main(int argc, char** argv) {
                 SHORT_WIDTH*2,
                 " ",
                 LONG_WIDTH,
-                "TODO",
+                label_name!=NULL?label_name:"",
                 LONG_WIDTH,
                 memory,
                 LONG_WIDTH,
