@@ -17,16 +17,14 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
-    char* out_file = stdout;
+    FILE* f = stdout;
     // Open user provided output file confirm we can overwrite
-    if (argc == 3) {
-        out_file = argv[2];
-        if (out_file == "-") {
-            out_file = stdout;
-        }
-        if (FileExists(out_file)) {
+    if (argc != 3) {}
+    else if (strcmp(argv[2], "-") == 0) {}
+    else {
+        if (FileExists(argv[2])) {
             char exists;
-            printf("%s exists. Overwrite? (Y/N)\n", out_file);
+            printf("%s exists. Overwrite? (Y/N)\n", argv[2]);
             scanf("%c", &exists);
             if (exists != 'y' && exists != 'Y') {
                 printf("Aborting...\n");
@@ -34,6 +32,7 @@ int main(int argc, char** argv) {
             }
             printf("Proceeding...\n");
         }
+        f = fopen(argv[2], "w");
     } 
 
     Run(argv[1]);
@@ -41,7 +40,6 @@ int main(int argc, char** argv) {
         PrintErrorMsg();
     }
 
-    FILE* f = fopen(out_file, "w");
     fprintf(f, "___Registers___\n");
     fprintf(f, "PC: %d\n", GetProgramCounter());
     for (int i = 1; i < MAX_REGISTERS + 1; i++) {

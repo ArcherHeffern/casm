@@ -22,7 +22,7 @@ bool RunProgram() {
 
 bool StepProgram() {
 	char* line = UIGetMemory(GetProgramCounter()*4);
-	if (!line) {
+	if (!line || line[0] == '\0') {
 		char* error_msg;
 		asprintf(&error_msg, "Expected instruction but found garbage");
 		SetErrorMsg(error_msg);
@@ -120,7 +120,9 @@ bool IsAtEnd(Scanner* scanner) {
 // Executors
 // ============
 int ExecuteInstruction(Scanner* scanner) {
+	printf("BEFORE\n");
 	TokenType instruction = Advance(scanner)->type;
+	printf("AFTER\n");
 	int new_pc = GetProgramCounter() + 1;
 	switch (instruction) {
 		case TOKEN_LOAD:
