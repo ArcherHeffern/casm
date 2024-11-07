@@ -314,7 +314,7 @@ int ScanLoadValue(Scanner* scanner) {
 	if (token == NULL) goto err;
 	switch (token->type) {
 		case TOKEN_REGISTER:
-			return ScanDirectAddress(scanner);
+			return GetMemory(ScanDirectAddress(scanner));
 		case TOKEN_EQUAL:
 			return ScanImmediateAddressValue(scanner);
 		case TOKEN_L_BRACKET:
