@@ -7,12 +7,6 @@
 #include "ui.h"
 #include "util.h"
 
-extern Color BACKGROUND_COLOR;
-extern Color FONT_COLOR;
-extern Color CELL_COLOR;
-extern char* ErrorMsg;
-
-
 /* Animation Constants */
 #define MAX_FUTURES 256
 #define MAX_ANIMATIONS 256
@@ -51,6 +45,11 @@ typedef struct LabelState LabelState;
 typedef enum EasingFunction EasingFunction;
 typedef enum OverrideType OverrideType;
 
+extern State* s;
+extern Color BACKGROUND_COLOR;
+extern Color FONT_COLOR;
+extern Color CELL_COLOR;
+extern char* ErrorMsg;
 
 struct RenderInfo {
 	Color button_color;

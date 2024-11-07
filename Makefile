@@ -9,7 +9,7 @@ LIBS = -lraylib -lm
 SRC_DIR = src
 OBJ_DIR = obj
 RAYLIB_SRC_DIR = raylib-5.0/src
-OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/ui.o $(OBJ_DIR)/util.o $(OBJ_DIR)/casm.o $(OBJ_DIR)/preprocess.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/animation.o $(OBJ_DIR)/complex_animations.o $(OBJ_DIR)/future.o $(OBJ_DIR)/render.o $(OBJ_DIR)/style_overrides.o
+OBJS = $(OBJ_DIR)/visualizer_main.o $(OBJ_DIR)/ui.o $(OBJ_DIR)/util.o $(OBJ_DIR)/casm.o $(OBJ_DIR)/preprocess.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/animation.o $(OBJ_DIR)/complex_animations.o $(OBJ_DIR)/future.o $(OBJ_DIR)/render.o $(OBJ_DIR)/style_overrides.o
 TARGET = main
 
 # Platform-specific setup

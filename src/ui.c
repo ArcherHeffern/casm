@@ -14,8 +14,9 @@
 #include "preprocess.h"
 #include "ui_internal.h"
 
-static State* s = NULL;
+State* s = NULL;
 char* ErrorMsg = NULL;
+
 Color BACKGROUND_COLOR = { .r = 0x18, .g = 0x18, .b = 0x18, .a = 0xFF };
 Color FONT_COLOR = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
 Color CELL_COLOR = { .r = 0x2A, .g = 0x2C, .b = 0x2E, .a = 0xFF };

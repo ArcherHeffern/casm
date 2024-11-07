@@ -2,6 +2,8 @@
 #ifndef UI_H_
 #define UI_H_
 
+#include <stdbool.h>
+
 /* Interpreter Constants */
 #define MEMORY_SIZE 64
 #define STORAGE_SIZE 64

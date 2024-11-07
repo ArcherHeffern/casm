@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -91,7 +92,7 @@ char** FileReadLines(char* filepath, int* num_lines) {
 		if (n_read <= 0) {
 			break;
 		}
-		if (linep[n_read-1] == '\0') {
+		if (linep[n_read-1] == '\n') {
 			linep[n_read-1] = '\0';
 		}
 		lines[(*num_lines)++] = linep;

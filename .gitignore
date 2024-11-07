@@ -4,3 +4,6 @@ obj
 dist
 .DS_Store
 raylib-5.0_macos
+.vscode
+interpreter
+out.txt
