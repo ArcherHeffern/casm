@@ -10,6 +10,7 @@ char* preprocess_error_msg = NULL;
 int Preprocess(char** lines, int num_lines, char** label_names, int* label_locations) {
 	// Removes leading whitespace
 	// Resolves labels
+	// Removes Comments
 	// Removes whitespace after labels
 	// We assume newlines have already been removed
 	if (preprocess_error_msg) {
@@ -25,6 +26,10 @@ int Preprocess(char** lines, int num_lines, char** label_names, int* label_locat
 		while (1) {
 			if (line[cur] == '\0') break;
 			if (line[cur] == ' ') break;
+			if (line[cur] == ';') {
+				line[cur] = '\0';
+				break;
+			}
 			if (IsAlpha(line[cur])) {};
 			if (line[cur] == ':') {
 				if (cur == 0) {
@@ -57,6 +62,20 @@ int Preprocess(char** lines, int num_lines, char** label_names, int* label_locat
 			}
 			cur++;
 		}
+		// Remove Comments
+		while (line[cur] != '\0') {
+			if (line[cur] == ';') {
+				line[cur] = '\0';
+				break;
+			}
+			cur++;
+		}
+		// Remove Trailing Space
+		cur--;
+		while (&line[cur] != line && IsWhitespace(line[cur])) {
+			cur--;
+		}
+		line[cur+1] = '\0';
 	}
 	return num_labels;
 }
