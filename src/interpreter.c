@@ -37,7 +37,7 @@ bool LoadProgram(char** program, int num_lines) {
 		return false;
 	}
 	for (int i = 0; i < num_lines; i++) {
-        UISetMemory(i, program[i]);
+        UISetMemory(i*4, program[i]);
 	}
 	return !HasError();
 }
