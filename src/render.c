@@ -173,9 +173,11 @@ void RenderErrorMsg() {
 		free(_error_msg);
 		_error_msg = NULL;
 	}
+
+	char* current_memory = UIGetMemory(GetProgramCounter()*4);
 	asprintf(&_error_msg, "Error at address %d executing '%s'\n%s\n", 
 		GetProgramCounter()*4, 
-		UIGetMemory(GetProgramCounter()*4),
+		current_memory!=NULL?current_memory:"000000",
 		GetErrorMsg()
 	);
 	Vector2 textSize = MeasureTextEx(GetFontDefault(), _error_msg, TEXT_SIZE, 1);

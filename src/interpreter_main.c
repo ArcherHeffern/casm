@@ -11,23 +11,27 @@
 int main(int argc, char** argv) {
 	if (
         (argc == 2 && strcmp(argv[1], "-h") == 0)
-        || argc != 3
+        || (argc != 2 && argc != 3)
     ) {
-		printf("Usage ./casm input_file output_file\n");
+		printf("Usage ./casm input_file [output_file]\n");
 		exit(1);
 	}
 
-    char* out_file = argv[2];
-    if (FileExists(out_file)) {
-        char exists;
-        printf("%s exists. Overwrite? (Y/N)\n", out_file);
-        scanf("%c", &exists);
-        if (exists != 'y' && exists != 'Y') {
-            printf("Aborting...\n");
-            exit(0);
+    char* out_file = stdout;
+    // Open user provided output file confirm we can overwrite
+    if (argc == 3) {
+        out_file = argv[2];
+        if (FileExists(out_file)) {
+            char exists;
+            printf("%s exists. Overwrite? (Y/N)\n", out_file);
+            scanf("%c", &exists);
+            if (exists != 'y' && exists != 'Y') {
+                printf("Aborting...\n");
+                exit(0);
+            }
+            printf("Proceeding...\n");
         }
-        printf("Proceeding...\n");
-    }
+    } 
 
     Run(argv[1]);
     if (HasError()) {

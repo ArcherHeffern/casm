@@ -154,6 +154,6 @@ void PrintErrorMsg() {
 		return;
 	}
 	int pc = GetProgramCounter();
-	printf("Error at address %d executing '%s'\n", pc*4, UIGetMemory(pc*4));
+	printf("Error at address %d executing '%s'\n", pc*4, UIGetMemory(pc*4)?UIGetMemory(pc*4): "000000");
 	printf("%s\n", GetErrorMsg());
 }
