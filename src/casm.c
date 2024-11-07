@@ -440,7 +440,7 @@ int ScanIndirectAddress(Scanner* scanner) {
 int ScanRelativeAddress(Scanner* scanner) {
 	Advance(scanner);
 	int offset = ScanRegister(scanner).value;
-	int pc = 4*(GetProgramCounter()-1);
+	int pc = 4*(GetProgramCounter());
 	return offset+pc;
 }
 

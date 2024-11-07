@@ -7,6 +7,7 @@
 
 #define SHORT_WIDTH 4
 #define LONG_WIDTH 30
+const char* EMPTY_CELL = "000000";
 
 int main(int argc, char** argv) {
 	if (
@@ -36,9 +37,6 @@ int main(int argc, char** argv) {
     } 
 
     Run(argv[1]);
-    if (HasError()) {
-        PrintErrorMsg();
-    }
 
     fprintf(f, "___Registers___\n");
     fprintf(f, "PC: %d\n", GetProgramCounter());
@@ -57,19 +55,35 @@ int main(int argc, char** argv) {
         "Storage"
     );
 
+    bool prev_line_compressed = false;
     for (int i = 0; i < MaxInt(MEMORY_SIZE, STORAGE_SIZE); i++) {
-        fprintf(f, "%0*d%-*s%-*s%-*s%-*s\n", 
-            SHORT_WIDTH,
-            i*4, 
-            SHORT_WIDTH*2,
-            " ",
-            LONG_WIDTH,
-            "TODO",
-            LONG_WIDTH,
-            i<MEMORY_SIZE&&UIGetMemory(i*4)?UIGetMemory(i*4):"000000", 
-            LONG_WIDTH,
-            i<STORAGE_SIZE&&UIGetStorage(i*4)?UIGetStorage(i*4):"000000"
-        );
+        const char* memory = i<MEMORY_SIZE&&UIGetMemory(i*4)?UIGetMemory(i*4):EMPTY_CELL; 
+        const char* storage = i<STORAGE_SIZE&&UIGetStorage(i*4)?UIGetStorage(i*4):EMPTY_CELL;
+        bool compress_this_line = memory == EMPTY_CELL && storage == EMPTY_CELL;
+        if (!compress_this_line) {
+            fprintf(f, "%0*d%-*s%-*s%-*s%-*s\n", 
+                SHORT_WIDTH,
+                i*4, 
+                SHORT_WIDTH*2,
+                " ",
+                LONG_WIDTH,
+                "TODO",
+                LONG_WIDTH,
+                memory,
+                LONG_WIDTH,
+                storage
+            );
+        }
+        else if (!prev_line_compressed) {
+            printf("...\n");
+        }
+
+        prev_line_compressed = compress_this_line;
+    } 
+
+    if (HasError()) {
+        PrintErrorMsg();
     }
+
     fclose(f);
 }
