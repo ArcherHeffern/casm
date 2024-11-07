@@ -21,6 +21,9 @@ int main(int argc, char** argv) {
     // Open user provided output file confirm we can overwrite
     if (argc == 3) {
         out_file = argv[2];
+        if (out_file == "-") {
+            out_file = stdout;
+        }
         if (FileExists(out_file)) {
             char exists;
             printf("%s exists. Overwrite? (Y/N)\n", out_file);
