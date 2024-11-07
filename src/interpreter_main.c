@@ -20,6 +20,10 @@ int main(int argc, char** argv) {
 
     FILE* f = stdout;
     // Open user provided output file confirm we can overwrite
+    if (!FileExists(argv[1])) {
+        fprintf(stderr, "Error: '%s' does not exist\n", argv[1]);
+        exit(1);
+    }
     if (argc != 3) {}
     else if (strcmp(argv[2], "-") == 0) {}
     else {
