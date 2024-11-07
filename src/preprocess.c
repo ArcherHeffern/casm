@@ -2,21 +2,15 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "preprocess.h"
 #include "util.h"
+#include "ui_internal.h"
 
-char* preprocess_error_msg = NULL;
-
-int Preprocess(char** lines, int num_lines, char** label_names, int* label_locations) {
+void Preprocess(LabelState* ls, char** lines, int num_lines) {
 	// Removes leading whitespace
 	// Resolves labels
 	// Removes Comments
 	// Removes whitespace after labels
 	// We assume newlines have already been removed
-	if (preprocess_error_msg) {
-		free(preprocess_error_msg);
-		preprocess_error_msg = NULL;
-	}
 	int num_labels = 0;
 	for (int i = 0; i < num_lines; i++) {
 		char* line = lines[i];
@@ -33,28 +27,28 @@ int Preprocess(char** lines, int num_lines, char** label_names, int* label_locat
 			if (IsAlpha(line[cur])) {};
 			if (line[cur] == ':') {
 				if (cur == 0) {
-					preprocess_error_msg = malloc(64);
-					asprintf(&preprocess_error_msg, "Cannot have label with no name on line %d", i);
-					return -1;
+					char* error_msg = malloc(64);
+					asprintf(&error_msg, "Preprocess Error: Cannot have label with no name on line %d", i);
+					return;
 				}
 				char* label_name = malloc(cur);
 				memcpy(label_name, line, cur);
 				// Check for dupliacates 
 				for (int j = 0; j < num_labels; j++) {
-					if (strcasecmp(label_names[j], label_name) == 0) {
-						preprocess_error_msg = malloc(64);
-						asprintf(&preprocess_error_msg, "Found duplicate labels on lines %d and %d", label_locations[j], i);
-						return -1;
+					if (strcasecmp(ls->label_names[j], label_name) == 0) {
+						char* error_msg = malloc(64);
+						asprintf(&error_msg, "Preprocess Error: Found duplicate labels on lines %d and %d", ls->label_locations[j], i);
+						return;
 					}
 				}
-				label_names[num_labels] = label_name;
-				label_locations[num_labels] = i;
+				ls->label_names[num_labels] = label_name;
+				ls->label_locations[num_labels] = i;
 				line = line+cur+1;
 				while (IsWhitespace(*line)){line++;}
 				if (*line=='\0') {
-					preprocess_error_msg = malloc(64);
-					asprintf(&preprocess_error_msg, "Most have instruction on same line as a label on line %d", i);
-					return -1;
+					char* error_msg = malloc(64);
+					asprintf(&error_msg, "Most have instruction on same line as a label on line %d", i);
+					return;
 				}
 				lines[i] = line;
 				num_labels++;
@@ -77,7 +71,40 @@ int Preprocess(char** lines, int num_lines, char** label_names, int* label_locat
 		}
 		line[cur+1] = '\0';
 	}
-	return num_labels;
+	ls->count = num_labels;
+}
+
+char* PrintJumpLabelBreakdown() {
+	char* result = NULL;
+    char *temp = NULL;    
+	LabelState* ls = &s->label_state;
+	asprintf(&result, "Jumps to each label:");
+
+    for (int i = 0; i < ls->count; i++) {
+        asprintf(&temp, "\n%s: %d", ls->label_names[i], ls->label_jump_counts[i]);
+
+		char *new_result;
+		asprintf(&new_result, "%s%s", result, temp);
+		free(result);  
+		result = new_result;
+		free(temp);    
+    }
+	return result;
+}
+
+int GetLabelAddress(char* label_ref) {
+	for (int i = 0; i < s->label_state.count; i++) {
+		if (strcmp(label_ref, s->label_state.label_names[i]) == 0) {
+			if (++s->label_state.label_jump_counts[i] >= MAX_LABEL_JUMPS) {
+				char* error_msg;
+				asprintf(&error_msg, "%d jumps performed - Possible infinite loop\n\n%s", MAX_LABEL_JUMPS, PrintJumpLabelBreakdown());
+				SetErrorMsg(error_msg);
+			}
+			free(label_ref);
+			return s->label_state.label_locations[i];
+		}
+	}
+	return -1;
 }
 
 /*

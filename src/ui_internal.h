@@ -39,9 +39,9 @@
 typedef struct State State;
 typedef struct RenderInfo RenderInfo;
 typedef struct Future Future;
+typedef struct LabelState LabelState;
 typedef struct StyleOverride StyleOverride;
 typedef struct Animation Animation;
-typedef struct LabelState LabelState;
 typedef enum EasingFunction EasingFunction;
 typedef enum OverrideType OverrideType;
 
@@ -179,5 +179,11 @@ bool LoadProgram(char** program, int num_lines);
 void HandleFileUpload();
 void HandleKeyPresses(State*);
 float Reset();
+
+// ============
+// Preprocess
+// ============
+void Preprocess(LabelState* ls, char** lines, int num_lines);
+char* GetLabelName(int addr); 
 
 #endif // UI_INTERNAL_H_

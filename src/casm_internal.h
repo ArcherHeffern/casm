@@ -57,7 +57,6 @@ void SetErrorMsg(char* msg);
 void PrintRegisters();
 void PrintMemory();
 void PrintMemoryRange(int lower, int upper); // Inclusive on both bounds
-char* PrintJumpLabelBreakdown();
 // Main
 int main();
 // Tests

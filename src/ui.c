@@ -11,7 +11,6 @@
 
 #include "util.h"
 #include "casm.h"
-#include "preprocess.h"
 #include "ui_internal.h"
 
 State* s = NULL;
@@ -180,12 +179,8 @@ bool Step() {
 // User Action Handlers
 // ============
 bool LoadProgram(char** program, int num_lines) {
-	LabelState* ls = &s->label_state;
-	ls->count = Preprocess(program, num_lines, ls->label_names, ls->label_locations);
-	if (ls->count < 0) {
-		char* error_msg;
-		asprintf(&error_msg, "Preprocess error: %s", preprocess_error_msg);
-		SetErrorMsg(error_msg);
+	Preprocess(&s->label_state, program, num_lines);
+	if (HasError()) {
 		return false;
 	}
 	for (int i = 0; i < num_lines; i++) {
@@ -318,22 +313,6 @@ void UISetStorage(int address, char* value) {
 }
 
 
-int GetLabelAddress(char* label_ref) {
-	for (int i = 0; i < s->label_state.count; i++) {
-		if (strcmp(label_ref, s->label_state.label_names[i]) == 0) {
-			if (++s->label_state.label_jump_counts[i] >= MAX_LABEL_JUMPS) {
-				char* error_msg;
-				asprintf(&error_msg, "%d jumps performed - Possible infinite loop\n\n%s", MAX_LABEL_JUMPS, PrintJumpLabelBreakdown());
-				SetErrorMsg(error_msg);
-			}
-			free(label_ref);
-			return s->label_state.label_locations[i];
-		}
-	}
-	return -1;
-}
-
-
 bool GetHaltflag() {
 	return s->haltflag;
 }
@@ -379,24 +358,6 @@ void PrintMemoryRange(int lower, int upper) {
 	for (int i = lower/4; i < upper/4+1; i++) {
 		printf("%d: %s\n", i*4, UIGetMemory(i*4));
 	}
-}
-
-char* PrintJumpLabelBreakdown() {
-	char* result = NULL;
-    char *temp = NULL;    
-	LabelState* ls = &s->label_state;
-	asprintf(&result, "Jumps to each label:");
-
-    for (int i = 0; i < ls->count; i++) {
-        asprintf(&temp, "\n%s: %d", ls->label_names[i], ls->label_jump_counts[i]);
-
-		char *new_result;
-		asprintf(&new_result, "%s%s", result, temp);
-		free(result);  
-		result = new_result;
-		free(temp);    
-    }
-	return result;
 }
 
 

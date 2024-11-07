@@ -14,6 +14,10 @@
 
 void Run(char* filename);
 
+// ============
+// Getters and Setters
+// ============
+
 int GetProgramCounter();
 int UIGetRegister(int reg_num);
 char* UIGetMemory(int address);
@@ -30,7 +34,10 @@ void SetHaltflag(bool flag);
 void SetErrorMsg(char* msg);
 bool HasError();
 
+
+// ============
 // Debug
+// ============
 void PrintRegisters();
 void PrintMemory();
 void PrintMemoryRange(int lower, int upper);
