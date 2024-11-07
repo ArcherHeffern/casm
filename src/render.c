@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include "ui_internal.h"
 
 // ============
@@ -38,13 +39,14 @@ void RenderRegister(State* state, int i) {
 		REGISTER_CELL_HEIGHT,
 		CELL_COLOR
 	);
-	char* msg = NULL;
+	char* msg;
 	asprintf(&msg, "R%d: %d", i, *state->registers[i]);
 	if (i == 0) {
 		free(msg);
 		asprintf(&msg, "PC: %d", *state->registers[0]);
 	}
 	DrawText(msg, x+20, y+REGISTER_CELL_HEIGHT/2, TEXT_SIZE, faded_color);
+	free(msg);
 }
 
 void RenderMemory(State* s) {
@@ -63,6 +65,7 @@ void RenderMemoryCell(State* state, int i) {
 	double* maybe_multiplier = StyleOverrideGet(state, MEMORY_CELL_SIZE_MULTIPLIER, i);
 	double multiplier = maybe_multiplier == NULL ? 1: *maybe_multiplier;
 	int y = render_info->memory_height + CELL_HEIGHT*i + CELL_GAP*i;
+	char* label_name = GetLabelName(i*4);
 
 	DrawRectangle(
 		X_PADDING - 0.5 * (CELL_WIDTH * multiplier - CELL_WIDTH),
@@ -75,6 +78,14 @@ void RenderMemoryCell(State* state, int i) {
 	asprintf(&msg, "Ox%x: %s", i*4, memory[i]);
 	float textWidth = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1).x;
 	DrawText(msg, X_PADDING + CELL_WIDTH/2 - textWidth/2, y+CELL_HEIGHT/2, TEXT_SIZE, FONT_COLOR);
+
+	if (label_name) {
+		char* pretty_label_name;
+		asprintf(&pretty_label_name, "%s:", label_name);
+		float textWidth = MeasureTextEx(GetFontDefault(), pretty_label_name, TEXT_SIZE, 1).x;
+		DrawText(pretty_label_name, X_PADDING + 20, y+CELL_HEIGHT/2, TEXT_SIZE, FONT_COLOR);
+		free(pretty_label_name);
+	}
 }
 
 void RenderStorage(State* state) {
@@ -106,6 +117,7 @@ void RenderStorageCell(State* state, int i) {
 	asprintf(&msg, "Ox%x: %s", i*4, storage[i]);
 	float textWidth = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1).x;
 	DrawText(msg, GetScreenWidth() - X_PADDING - CELL_WIDTH/2 - textWidth/2, y+CELL_HEIGHT/2, TEXT_SIZE, FONT_COLOR);
+	free(msg);
 }
 
 void RenderControls(State* state) {
@@ -167,13 +179,7 @@ void RenderErrorMsg() {
 	}
 	int width = 300;
 	int height = 150;
-	DrawRectangle(GetScreenWidth()/2-width/2, GetScreenHeight()/2-height/2, width, height, RED);
-	static char* _error_msg = NULL;
-	if (_error_msg != NULL) {
-		free(_error_msg);
-		_error_msg = NULL;
-	}
-
+	char* _error_msg = NULL;
 	char* current_memory = UIGetMemory(GetProgramCounter()*4);
 	asprintf(&_error_msg, "Error at address %d executing '%s'\n%s\n", 
 		GetProgramCounter()*4, 
@@ -181,6 +187,8 @@ void RenderErrorMsg() {
 		GetErrorMsg()
 	);
 	Vector2 textSize = MeasureTextEx(GetFontDefault(), _error_msg, TEXT_SIZE, 1);
+
+	DrawRectangle(GetScreenWidth()/2-width/2, GetScreenHeight()/2-height/2, width, height, RED);
 	DrawText(
 		_error_msg, 
 		GetScreenWidth()/2 - textSize.x/2,
@@ -188,4 +196,6 @@ void RenderErrorMsg() {
 		TEXT_SIZE, 
 		FONT_COLOR
 	);
+
+	free(_error_msg);
 }
