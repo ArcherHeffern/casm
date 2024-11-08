@@ -44,6 +44,14 @@ double MinDouble(double a, double b) {
 	return a < b ? a: b;
 }
 
+double MaxDouble(double a, double b) {
+	return a > b ? a: b;
+}
+
+double ClampDouble(double v, double lower, double upper) {
+	return MinDouble(MaxDouble(v, lower), upper);
+}
+
 float MinFloat(float a, float b) {
 	return a < b? a: b;
 }
@@ -87,6 +95,12 @@ char** FileReadLines(char* filepath, int* num_lines) {
 	size_t num_to_read;
 
 	while (1) {
+		if (*num_lines >= MEMORY_SIZE) {
+			char* msg = NULL;
+			asprintf(&msg, "Input file too big. Memory is %d lines", MEMORY_SIZE);
+			SetErrorMsg(msg);
+			return NULL;
+		}
 		char* linep = (char*) malloc(CELL_SIZE);
 		n_read = getline(&linep, &num_to_read, file_p);
 		if (n_read <= 0) {
