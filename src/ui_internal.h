@@ -66,6 +66,7 @@ struct RenderInfo {
 	Rectangle popup_box;
 	Rectangle x_box;
 	double popup_opacity;
+	double scroll_offset;
 
 	Future* futures[MAX_FUTURES];
 	Animation* animations[MAX_ANIMATIONS]; 
@@ -183,7 +184,8 @@ void RenderPopup();
 // User Action Handlers
 // ============
 bool LoadProgram(char** program, int num_lines);
-void HandleFileUpload();
+bool HandleFileDropped();
+bool HandleFileUpload(char* path);
 void HandleKeyPresses(State*);
 float Reset();
 

@@ -19,6 +19,10 @@ void Run(char* filename) {
 	}
     int num_lines;
     char** program = FileReadLines(filename, &num_lines);
+    if (program == NULL) {
+        printf("%s\n", GetErrorMsg());
+        exit(1);
+    }
     LoadProgram(program, num_lines);
     RunProgram();
 }

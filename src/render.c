@@ -56,7 +56,9 @@ void RenderMemory(State* s) {
 		RenderMemoryCell(s, i);
 	}
 
+	render_info->memory_pointer.y += s->render_info.scroll_offset;
 	DrawRectangleLinesEx(render_info->memory_pointer, 2.0F, PC_COLOR); // Program Counter
+	render_info->memory_pointer.y -= s->render_info.scroll_offset;
 }
 
 void RenderMemoryCell(State* state, int i) {
@@ -66,10 +68,11 @@ void RenderMemoryCell(State* state, int i) {
 	double multiplier = maybe_multiplier == NULL ? 1: *maybe_multiplier;
 	int y = render_info->memory_height + CELL_HEIGHT*i + CELL_GAP*i;
 	char* label_name = GetLabelName(i*4);
+	double scroll_offset = s->render_info.scroll_offset;
 
 	DrawRectangle(
 		X_PADDING - 0.5 * (CELL_WIDTH * multiplier - CELL_WIDTH),
-		y - 0.5 * (CELL_HEIGHT * multiplier - CELL_HEIGHT),
+		y - 0.5 * (CELL_HEIGHT * multiplier - CELL_HEIGHT) + scroll_offset,
 		CELL_WIDTH * multiplier,
 		CELL_HEIGHT * multiplier,
 		CELL_COLOR
@@ -77,13 +80,13 @@ void RenderMemoryCell(State* state, int i) {
 	char* msg = NULL;
 	asprintf(&msg, "Ox%x: %s", i*4, memory[i]);
 	float textWidth = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1).x;
-	DrawText(msg, X_PADDING + CELL_WIDTH/2 - textWidth/2, y+CELL_HEIGHT/2, TEXT_SIZE, FONT_COLOR);
+	DrawText(msg, X_PADDING + CELL_WIDTH/2 - textWidth/2, y+CELL_HEIGHT/2 + scroll_offset, TEXT_SIZE, FONT_COLOR);
 
 	if (label_name) {
-		char* pretty_label_name;
+		char* pretty_label_name = NULL;
 		asprintf(&pretty_label_name, "%s:", label_name);
 		float textWidth = MeasureTextEx(GetFontDefault(), pretty_label_name, TEXT_SIZE, 1).x;
-		DrawText(pretty_label_name, X_PADDING + 20, y+CELL_HEIGHT/2, TEXT_SIZE, FONT_COLOR);
+		DrawText(pretty_label_name, X_PADDING + 20, y+CELL_HEIGHT/2 + scroll_offset, TEXT_SIZE, FONT_COLOR);
 		free(pretty_label_name);
 	}
 }
@@ -95,20 +98,22 @@ void RenderStorage(State* state) {
 		RenderStorageCell(state, i);
 	}
 
+	render_info->storage_pointer.y += s->render_info.scroll_offset;
 	DrawRectangleLinesEx(render_info->storage_pointer, 2.0F, PC_COLOR); 
+	render_info->storage_pointer.y -= s->render_info.scroll_offset;
 }
 
 void RenderStorageCell(State* state, int i) {
 	RenderInfo* render_info = &state->render_info;
 	char** storage = state->storage;
-
 	int y = render_info->storage_height + CELL_HEIGHT*i + CELL_GAP*i;
 	double* maybe_multiplier = StyleOverrideGet(state, STORAGE_CELL_SIZE_MULTIPLIER, i);
 	double multiplier = maybe_multiplier == NULL ? 1: *maybe_multiplier;
+	double scroll_offset = s->render_info.scroll_offset;
 
 	DrawRectangle(
 		GetScreenWidth() - X_PADDING - CELL_WIDTH - 0.5 * (CELL_WIDTH * multiplier - CELL_WIDTH),
-		y - 0.5 * (CELL_HEIGHT * multiplier - CELL_HEIGHT),
+		y - 0.5 * (CELL_HEIGHT * multiplier - CELL_HEIGHT) + scroll_offset,
 		CELL_WIDTH * multiplier,
 		CELL_HEIGHT * multiplier,
 		CELL_COLOR
@@ -116,7 +121,7 @@ void RenderStorageCell(State* state, int i) {
 	char* msg = NULL;
 	asprintf(&msg, "Ox%x: %s", i*4, storage[i]);
 	float textWidth = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1).x;
-	DrawText(msg, GetScreenWidth() - X_PADDING - CELL_WIDTH/2 - textWidth/2, y+CELL_HEIGHT/2, TEXT_SIZE, FONT_COLOR);
+	DrawText(msg, GetScreenWidth() - X_PADDING - CELL_WIDTH/2 - textWidth/2, y+CELL_HEIGHT/2+scroll_offset, TEXT_SIZE, FONT_COLOR);
 	free(msg);
 }
 

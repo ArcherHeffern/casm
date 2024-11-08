@@ -86,9 +86,7 @@ void Run(char* filename) {
 	}
 	s->render_info = render_info;
 
-	int num_lines;
-
-	FileReadLines(filename, &num_lines);
+	HandleFileUpload(filename);
 
 	StartVisualisation();
 	while (!WindowShouldClose()) {
@@ -155,8 +153,11 @@ bool FileHasChanged() {
 bool Step() {
 	bool animations_left = StepAnimations(s);
 	bool futures_left = StepFutures(s);
+	bool finished_or_errored = false;
 
-	HandleFileUpload();
+	if (!HandleFileDropped()) {
+		finished_or_errored = true;
+	}
 
 	if (FileHasChanged() || IsKeyPressed(KEY_R)) {
 		if (FD != -1) {
@@ -169,9 +170,20 @@ bool Step() {
 			free(tmp_file_path);
 			int num_lines = 0;
 			char** program = FileReadLines(FILE_PATH, &num_lines);
-			LoadProgram(program, num_lines);
+			if (program == NULL) {
+				finished_or_errored = true;
+			} else {
+				LoadProgram(program, num_lines);
+			}
 		}
 	}
+
+	double y = GetMouseWheelMoveV().y * SCROLL_SPEED;
+	double full_memory_height = (MEMORY_SIZE-1) * (CELL_HEIGHT + CELL_GAP);
+	double full_storage_height = 0;
+	double full_height = MaxDouble(full_memory_height, full_storage_height);
+	s->render_info.scroll_offset = ClampDouble(s->render_info.scroll_offset+y, -full_height, 0);	
+
 	if (IsKeyPressed(KEY_C)) {
 		end = false;
 		cont = !cont;
@@ -180,10 +192,9 @@ bool Step() {
 		end = true;
 	}
 	if (IsKeyPressed(KEY_S) || cont || end) {
-		if (animations_left || futures_left) {
-		} else {
+		if (!animations_left && !futures_left) {
 			if (!StepProgram()) {
-				s->render_info.popup_opacity = 1;
+				finished_or_errored = true;
 			}
 		}
 	}
@@ -193,6 +204,10 @@ bool Step() {
 		if (s->render_info.popup_opacity == 1 && CheckCollisionPointRec(mouse_position, s->render_info.x_box)) {
 			CreateAnimation(s, 0, &s->render_info.popup_opacity, IN_N_OUT, POPUP_FADE_DURATION, 0, NULL);
 		}
+	}
+
+	if (finished_or_errored) {
+		CreateAnimation(s, 1, &s->render_info.popup_opacity, IN_N_OUT, POPUP_FADE_DURATION, 0, NULL);
 	}
 
 	if (HasError() || GetHaltflag()) {
@@ -225,32 +240,44 @@ bool LoadProgram(char** program, int num_lines) {
 	return !HasError();
 }
 
-void HandleFileUpload() {
+bool HandleFileDropped() {
 	if (!IsFileDropped()) {
-		return;
+		return true; // True because this isn't an error
 	}
 	FilePathList files = LoadDroppedFiles();
 	assert(files.count > 0 && "Expected a file to be uploaded");
 
-	Reset();
+	bool errored = HandleFileUpload(files.paths[0]);
 
-	asprintf(&FILE_PATH, "%s", files.paths[0]);
+	UnloadDroppedFiles(files);
+	return errored;
+}
+
+bool HandleFileUpload(char* path) {
+	if (path == NULL || !FileExists(path)) {
+		return false;
+	}
+	Reset();
+	asprintf(&FILE_PATH, "%s", path);
 
 	int num_lines;
 	char** program = FileReadLines(FILE_PATH, &num_lines);
+	if (program == NULL) {
+		return false;
+	}
+
 	LoadProgram(program, num_lines);
 
 	if ((FD = open(FILE_PATH, O_RDONLY)) == -1) {
 		char* error_msg;
 		asprintf(&error_msg, "Failed to open file %s", FILE_PATH);
 		SetErrorMsg(error_msg);
-		return;
+		return false;
 	}
 	struct stat buf;
 	fstat(FD, &buf);
 	LAST_MODIFICATION = buf.st_mtimespec;
-	
-	UnloadDroppedFiles(files);
+	return true;
 }
 
 
@@ -280,9 +307,11 @@ float Reset() {
 	ls->count = 0;
 	s->haltflag = false;
 
+	CreateAnimation(s, 0, &s->render_info.scroll_offset, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0, NULL); // Set Scroll to baseline
 	SetActiveMemoryCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	SetActiveStorageCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
-	for (int i = 0; i < 4; i++) {
+	int mx = MinInt(MinInt(4, MEMORY_SIZE), STORAGE_SIZE);
+	for (int i = 0; i < mx; i++) {
 		SetMemoryCellValue(s, i, EMPTY_CELL, RESET_DURATION, i*RESET_DELAY);
 		SetStorageCellValue(s, i, EMPTY_CELL, RESET_DURATION, i*RESET_DELAY);
 	}
