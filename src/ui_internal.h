@@ -28,6 +28,9 @@
 #define CELL_WIDTH 250
 #define CELL_GAP 20
 #define SCROLL_SPEED 4
+#define X_BOX_GAP 10
+#define POPUP_FADE_Y_DISPLACEMENT_PX 20
+#define POPUP_SHADOW_GAP 5
 
 // Timing
 #define RESET_DURATION 0.5
@@ -35,6 +38,7 @@
 #define SET_ACTIVE_CELL_DURATION 0.5
 #define SETTER_ANIMATION_DURATION 0.5
 #define SETTER_ANIMATION_DELAY 0.0
+#define POPUP_FADE_DURATION 0.3
 
 typedef struct State State;
 typedef struct RenderInfo RenderInfo;
@@ -59,6 +63,9 @@ struct RenderInfo {
 	Rectangle memory_pointer; // Program Counter
 	Rectangle storage_pointer; // Active Storage Box
 	int last_modified_storage_cell;
+	Rectangle popup_box;
+	Rectangle x_box;
+	double popup_opacity;
 
 	Future* futures[MAX_FUTURES];
 	Animation* animations[MAX_ANIMATIONS]; 
@@ -170,7 +177,7 @@ void RenderStorageCell(State*, int i);
 void RenderControls(State*);
 void RenderButton(State*, int x, int y, char* text);
 void RenderHeader();
-void RenderErrorMsg();
+void RenderPopup();
 
 // ============
 // User Action Handlers

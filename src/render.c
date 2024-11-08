@@ -13,7 +13,7 @@ void Render(State* s) {
 		RenderStorage(s);
 		RenderHeader();
 		RenderControls(s);
-		RenderErrorMsg();
+		RenderPopup();
 	EndDrawing();
 }
 
@@ -173,29 +173,64 @@ void RenderHeader() {
 	
 }
 
-void RenderErrorMsg() {
-	if (!HasError()) {
+void RenderPopup() {
+	if (s->render_info.popup_opacity == 0) {
 		return;
 	}
-	int width = 300;
-	int height = 150;
-	char* _error_msg = NULL;
-	char* current_memory = UIGetMemory(GetProgramCounter()*4);
-	asprintf(&_error_msg, "Error at address %d executing '%s'\n%s\n", 
-		GetProgramCounter()*4, 
-		current_memory!=NULL?current_memory:"000000",
-		GetErrorMsg()
-	);
-	Vector2 textSize = MeasureTextEx(GetFontDefault(), _error_msg, TEXT_SIZE, 1);
 
-	DrawRectangle(GetScreenWidth()/2-width/2, GetScreenHeight()/2-height/2, width, height, RED);
-	DrawText(
-		_error_msg, 
-		GetScreenWidth()/2 - textSize.x/2,
-		GetScreenHeight()/2 - textSize.y/2,
+	double opacity = s->render_info.popup_opacity;
+	char* msg;
+	Color background_color;
+	if (HasError()) {
+		char* current_memory = UIGetMemory(GetProgramCounter()*4);
+		asprintf(&msg, "Error at address %d executing '%s'\n%s\n", 
+			GetProgramCounter()*4, 
+			current_memory!=NULL?current_memory:"000000",
+			GetErrorMsg()
+		);
+		background_color = RED;
+	} else {
+		background_color = GREEN;
+		asprintf(&msg, "Program Complete!");
+	}
+	background_color = Fade(background_color, opacity);
+	Color button_color = Fade(WHITE, opacity);
+	Vector2 textSize = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1);
+	Color font_color = Fade(FONT_COLOR, opacity);
+	Color shadow_color = Fade(WHITE, opacity);
+
+	Vector2 origin = {.x=0, .y=(1-opacity)*-POPUP_FADE_Y_DISPLACEMENT_PX};
+	Vector2 shadow_origin = {.x=-POPUP_SHADOW_GAP, .y=(1-opacity)*-POPUP_FADE_Y_DISPLACEMENT_PX+POPUP_SHADOW_GAP};
+	Rectangle top_shadow = {
+		.x=s->render_info.popup_box.x, 
+		.y=s->render_info.popup_box.y, 
+		.width=s->render_info.popup_box.width,
+		.height=POPUP_SHADOW_GAP
+	};
+	Rectangle right_shadow = {
+		.x=s->render_info.popup_box.x + s->render_info.popup_box.width - POPUP_SHADOW_GAP, 
+		.y=s->render_info.popup_box.y, 
+		.width=POPUP_SHADOW_GAP,
+		.height=s->render_info.popup_box.height
+	};
+	// Top shadow
+	DrawRectanglePro(top_shadow, shadow_origin, 0, shadow_color);
+	// Right shadow
+	DrawRectanglePro(right_shadow, shadow_origin, 0, shadow_color);
+	// Bottom shadow
+	DrawRectanglePro(s->render_info.popup_box, origin, 0, background_color);
+	DrawRectanglePro(s->render_info.x_box, origin, 0, button_color);
+	DrawTextPro(
+		GetFontDefault(),
+		msg, 
+		(Vector2){ .x=GetScreenWidth()/2 - textSize.x/2, .y=GetScreenHeight()/2 - textSize.y/2},
+		origin,
+		0,
 		TEXT_SIZE, 
-		FONT_COLOR
+		1,
+		font_color
 	);
 
-	free(_error_msg);
+
+	free(msg);
 }

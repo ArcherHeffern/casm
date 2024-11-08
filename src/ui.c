@@ -31,22 +31,49 @@ struct timespec LAST_MODIFICATION = { 0 };
 void Run(char* filename) {
 	InitWindow(800, 600, "Mini Asm");	
 	SetTargetFPS(60);
+	Rectangle memory_pointer = { // Program Counter Box
+		.x = 0,
+		.y = 0,
+		.width = 270,
+		.height = 85
+	};
+	memory_pointer.x = X_PADDING - (memory_pointer.width - CELL_WIDTH) / 2;
+	memory_pointer.y = GetScreenHeight() / 2 - CELL_HEIGHT / 2 - (memory_pointer.height - CELL_HEIGHT) / 2;
+
+	Rectangle storage_pointer = { // Active Storage Box
+		.x = 0,
+		.y = 0,
+		.width = 270,
+		.height = 85
+	};
+	storage_pointer.x = GetScreenWidth() - X_PADDING - (storage_pointer.width - CELL_WIDTH) / 2 - CELL_WIDTH;
+	storage_pointer.y = memory_pointer.y;
+
+	Rectangle popup_box = {
+		0,
+		0,
+		300,
+		150
+	};
+	popup_box.x = GetScreenWidth()/2-popup_box.width/2;
+	popup_box.y = GetScreenHeight()/2-popup_box.height/2;
+
+	int x_box_width = popup_box.width*0.1;
+	Rectangle x_box = {
+		.x=popup_box.x+popup_box.width-x_box_width-X_BOX_GAP,
+		.y=popup_box.y+X_BOX_GAP,
+		.width=x_box_width,
+		.height=x_box_width
+	};
+
 	RenderInfo render_info = {
 		.register_height = GetScreenHeight(),
 		.memory_height = GetScreenHeight(),
 		.storage_height = GetScreenHeight(),
-		.memory_pointer = { // Program Counter Box
-			.x = 0,
-			.y = 0,
-			.width = 270,
-			.height = 85
-		},
-		.storage_pointer = { // Active Storage Box
-			.x = 0,
-			.y = 0,
-			.width = 270,
-			.height = 85
-		},
+		.memory_pointer = memory_pointer,
+		.storage_pointer = storage_pointer,
+		.popup_box = popup_box,
+		.x_box = x_box
 	};
 
 
@@ -59,12 +86,6 @@ void Run(char* filename) {
 	}
 	s->render_info = render_info;
 
-	float mid_y = GetScreenHeight() / 2 - CELL_HEIGHT / 2 - (s->render_info.memory_pointer.height - CELL_HEIGHT) / 2;
-	s->render_info.memory_pointer.y = mid_y;
-	s->render_info.memory_pointer.x = X_PADDING - (s->render_info.memory_pointer.width - CELL_WIDTH) / 2;
-
-	s->render_info.storage_pointer.y = mid_y;
-	s->render_info.storage_pointer.x = GetScreenWidth() - X_PADDING - (s->render_info.storage_pointer.width - CELL_WIDTH) / 2 - CELL_WIDTH;
 	int num_lines;
 
 	FileReadLines(filename, &num_lines);
@@ -138,16 +159,18 @@ bool Step() {
 	HandleFileUpload();
 
 	if (FileHasChanged() || IsKeyPressed(KEY_R)) {
-		char* tmp_file_path = NULL;
-		asprintf(&tmp_file_path, "%s", FILE_PATH);
-		int tmp_fd = FD;
-		Reset();
-		FD = tmp_fd;
-		asprintf(&FILE_PATH, "%s", tmp_file_path);
-		free(tmp_file_path);
-		int num_lines = 0;
-		char** program = FileReadLines(FILE_PATH, &num_lines);
-		LoadProgram(program, num_lines);
+		if (FD != -1) {
+			char* tmp_file_path = NULL;
+			asprintf(&tmp_file_path, "%s", FILE_PATH);
+			int tmp_fd = FD;
+			Reset();
+			FD = tmp_fd;
+			asprintf(&FILE_PATH, "%s", tmp_file_path);
+			free(tmp_file_path);
+			int num_lines = 0;
+			char** program = FileReadLines(FILE_PATH, &num_lines);
+			LoadProgram(program, num_lines);
+		}
 	}
 	if (IsKeyPressed(KEY_C)) {
 		end = false;
@@ -159,7 +182,16 @@ bool Step() {
 	if (IsKeyPressed(KEY_S) || cont || end) {
 		if (animations_left || futures_left) {
 		} else {
-			StepProgram();
+			if (!StepProgram()) {
+				s->render_info.popup_opacity = 1;
+			}
+		}
+	}
+
+	if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+		Vector2 mouse_position = GetMousePosition();
+		if (s->render_info.popup_opacity == 1 && CheckCollisionPointRec(mouse_position, s->render_info.x_box)) {
+			CreateAnimation(s, 0, &s->render_info.popup_opacity, IN_N_OUT, POPUP_FADE_DURATION, 0, NULL);
 		}
 	}
 
@@ -225,13 +257,14 @@ void HandleFileUpload() {
 float Reset() {
 	cont = false;
 	end = false;
+	s->render_info.popup_opacity = 0;
 	s->render_info.last_modified_storage_cell = 0;
 	FD = -1;
 	if (FILE_PATH != NULL) {
 		free(FILE_PATH);
 		FILE_PATH = NULL;
 	}
-	if (s->error_msg) {
+	if (HasError()) {
 		free(s->error_msg);
 		s->error_msg = NULL;
 	}
