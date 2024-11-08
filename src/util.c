@@ -95,7 +95,7 @@ char** FileReadLines(char* filepath, int* num_lines) {
 	size_t num_to_read;
 
 	while (1) {
-		if (*num_lines >= MEMORY_SIZE) {
+		if (*num_lines > MEMORY_SIZE) {
 			char* msg = NULL;
 			asprintf(&msg, "Input file too big. Memory is %d lines", MEMORY_SIZE);
 			SetErrorMsg(msg);
