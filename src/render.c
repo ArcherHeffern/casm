@@ -69,25 +69,34 @@ void RenderMemoryCell(State* state, int i) {
 	int y = render_info->memory_height + CELL_HEIGHT*i + CELL_GAP*i;
 	char* label_name = GetLabelName(i*4);
 	double scroll_offset = s->render_info.scroll_offset;
-
-	DrawRectangle(
-		X_PADDING - 0.5 * (CELL_WIDTH * multiplier - CELL_WIDTH),
-		y - 0.5 * (CELL_HEIGHT * multiplier - CELL_HEIGHT) + scroll_offset,
-		CELL_WIDTH * multiplier,
-		CELL_HEIGHT * multiplier,
-		CELL_COLOR
-	);
+	Rectangle cell = { 
+		.x=X_PADDING - 0.5 * (CELL_WIDTH * multiplier - CELL_WIDTH), 
+		.y=y - 0.5 * (CELL_HEIGHT * multiplier - CELL_HEIGHT) + scroll_offset,
+		.width=CELL_WIDTH * multiplier,
+		.height=CELL_HEIGHT * multiplier
+	};
 	char* msg = NULL;
 	asprintf(&msg, "Ox%x: %s", i*4, memory[i]);
-	float textWidth = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1).x;
-	DrawText(msg, X_PADDING + CELL_WIDTH/2 - textWidth/2, y+CELL_HEIGHT/2 + scroll_offset, TEXT_SIZE, FONT_COLOR);
+	Vector2 text_size = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1);
+
+	DrawRectangleRec(
+		cell,
+		CELL_COLOR
+	);
+	DrawText(msg, cell.x+cell.width/2-text_size.x/2, cell.y + cell.height/2-text_size.y/2, TEXT_SIZE, FONT_COLOR);
 
 	if (label_name) {
-		char* pretty_label_name = NULL;
-		asprintf(&pretty_label_name, "%s:", label_name);
-		float textWidth = MeasureTextEx(GetFontDefault(), pretty_label_name, TEXT_SIZE, 1).x;
-		DrawText(pretty_label_name, X_PADDING + 20, y+CELL_HEIGHT/2 + scroll_offset, TEXT_SIZE, FONT_COLOR);
-		free(pretty_label_name);
+		float label_box_padding = 10;
+		Vector2 text_size = MeasureTextEx(GetFontDefault(), label_name, TEXT_SIZE, 1);
+		Rectangle label_box = {
+			.x=cell.x,
+			.y=cell.y,
+			.width=text_size.x + label_box_padding,
+			.height=text_size.y + label_box_padding
+		};
+		float textWidth = MeasureTextEx(GetFontDefault(), label_name, TEXT_SIZE, 1).x;
+		DrawRectangleLinesEx(label_box, 1.0F, FONT_COLOR);
+		DrawText(label_name, cell.x+label_box_padding/2, cell.y+label_box_padding/2, TEXT_SIZE, FONT_COLOR);
 	}
 }
 
