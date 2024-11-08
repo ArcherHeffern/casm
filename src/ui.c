@@ -137,13 +137,17 @@ bool Step() {
 
 	HandleFileUpload();
 
-	if (FileHasChanged()) {
+	if (FileHasChanged() || IsKeyPressed(KEY_R)) {
+		char* tmp_file_path = NULL;
+		asprintf(&tmp_file_path, "%s", FILE_PATH);
+		int tmp_fd = FD;
+		Reset();
+		FD = tmp_fd;
+		asprintf(&FILE_PATH, "%s", tmp_file_path);
+		free(tmp_file_path);
 		int num_lines = 0;
 		char** program = FileReadLines(FILE_PATH, &num_lines);
 		LoadProgram(program, num_lines);
-	}
-	if (IsKeyPressed(KEY_R)) {
-		Reset();
 	}
 	if (IsKeyPressed(KEY_C)) {
 		end = false;
