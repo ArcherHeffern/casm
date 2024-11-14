@@ -31,6 +31,7 @@
 #define X_BOX_GAP 10
 #define POPUP_FADE_Y_DISPLACEMENT_PX 20
 #define POPUP_SHADOW_GAP 5
+#define LABEL_BOX_PADDING 10
 
 // Timing
 #define RESET_DURATION 0.5
@@ -65,6 +66,7 @@ struct RenderInfo {
 	int last_modified_storage_cell;
 	Rectangle popup_box;
 	Rectangle x_box;
+	Texture2D x_button;
 	double popup_opacity;
 	double scroll_offset;
 

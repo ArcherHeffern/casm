@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <assert.h>
 #include "ui_internal.h"
@@ -75,8 +76,7 @@ void RenderMemoryCell(State* state, int i) {
 		.width=CELL_WIDTH * multiplier,
 		.height=CELL_HEIGHT * multiplier
 	};
-	char* msg = NULL;
-	asprintf(&msg, "Ox%x: %s", i*4, memory[i]);
+	char* msg = memory[i];
 	Vector2 text_size = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1);
 
 	DrawRectangleRec(
@@ -85,19 +85,24 @@ void RenderMemoryCell(State* state, int i) {
 	);
 	DrawText(msg, cell.x+cell.width/2-text_size.x/2, cell.y + cell.height/2-text_size.y/2, TEXT_SIZE, FONT_COLOR);
 
+	// Label Box
 	if (label_name) {
-		float label_box_padding = 10;
 		Vector2 text_size = MeasureTextEx(GetFontDefault(), label_name, TEXT_SIZE, 1);
 		Rectangle label_box = {
 			.x=cell.x,
 			.y=cell.y,
-			.width=text_size.x + label_box_padding,
-			.height=text_size.y + label_box_padding
+			.width=text_size.x + LABEL_BOX_PADDING,
+			.height=text_size.y + LABEL_BOX_PADDING
 		};
-		float textWidth = MeasureTextEx(GetFontDefault(), label_name, TEXT_SIZE, 1).x;
 		DrawRectangleLinesEx(label_box, 1.0F, FONT_COLOR);
-		DrawText(label_name, cell.x+label_box_padding/2, cell.y+label_box_padding/2, TEXT_SIZE, FONT_COLOR);
+		DrawText(label_name, label_box.x+LABEL_BOX_PADDING/2, label_box.y+LABEL_BOX_PADDING/2, TEXT_SIZE, FONT_COLOR);
 	}
+
+	// Address Box
+	char address[10];
+	sprintf(address, "%4d", i*4);
+	text_size = MeasureTextEx(GetFontDefault(), address, TEXT_SIZE, 1);
+	DrawText(address, cell.x+LABEL_BOX_PADDING/2, cell.y+cell.height - text_size.y - LABEL_BOX_PADDING, TEXT_SIZE, FONT_COLOR);
 }
 
 void RenderStorage(State* state) {
@@ -233,7 +238,10 @@ void RenderPopup() {
 	DrawRectanglePro(right_shadow, shadow_origin, 0, shadow_color);
 	// Bottom shadow
 	DrawRectanglePro(s->render_info.popup_box, origin, 0, background_color);
+	// X Button
 	DrawRectanglePro(s->render_info.x_box, origin, 0, button_color);
+	Rectangle r = {.height=s->render_info.x_box.height, .width=s->render_info.x_box.width, .x=0, .y=0};
+	DrawTexturePro(s->render_info.x_button, r, s->render_info.x_box, origin, 0, WHITE);
 	DrawTextPro(
 		GetFontDefault(),
 		msg, 

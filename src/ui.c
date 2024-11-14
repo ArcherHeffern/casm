@@ -65,6 +65,10 @@ void Run(char* filename) {
 		.width=x_box_width,
 		.height=x_box_width
 	};
+	Image x_button_image = LoadImage("./src/xbtn.png");
+	ImageResize(&x_button_image, x_box.width, x_box.height);
+	Texture2D x_button = LoadTextureFromImage(x_button_image);
+	UnloadImage(x_button_image);
 
 	RenderInfo render_info = {
 		.register_height = GetScreenHeight(),
@@ -73,7 +77,8 @@ void Run(char* filename) {
 		.memory_pointer = memory_pointer,
 		.storage_pointer = storage_pointer,
 		.popup_box = popup_box,
-		.x_box = x_box
+		.x_box = x_box,
+		.x_button = x_button
 	};
 
 
@@ -179,10 +184,10 @@ bool Step() {
 	}
 
 	double y = GetMouseWheelMoveV().y * SCROLL_SPEED;
-	double full_memory_height = (MEMORY_SIZE-1) * (CELL_HEIGHT + CELL_GAP);
-	double full_storage_height = 0;
-	double full_height = MaxDouble(full_memory_height, full_storage_height);
-	s->render_info.scroll_offset = ClampDouble(s->render_info.scroll_offset+y, -full_height, 0);	
+	// double full_memory_height = (MEMORY_SIZE-1) * (CELL_HEIGHT + CELL_GAP);
+	// double full_storage_height = 0;
+	// double full_height = MaxDouble(full_memory_height, full_storage_height);
+	s->render_info.scroll_offset = s->render_info.scroll_offset+y;
 
 	if (IsKeyPressed(KEY_C)) {
 		end = false;
