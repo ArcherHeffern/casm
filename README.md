@@ -4,6 +4,8 @@ __[Demo(TODO)](https://youtube.com)__
 
 ![visualizer_demo](https://github.com/user-attachments/assets/f9077f9c-567d-4874-976c-5069a905d3e6)
 
+![visualizer_error_msg](https://github.com/user-attachments/assets/4f024951-749a-4ceb-9f5c-03c353c5832e)
+
 ## Interpreter
 
 ![interpreter_big_loop](https://github.com/user-attachments/assets/a58860d3-428e-4d80-9dab-84235162515c)
