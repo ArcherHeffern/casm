@@ -5,8 +5,7 @@ __[Demo(TODO)](https://youtube.com)__
 
 ## Interpreter
 
-![Screenshot 2024-11-14 at 7 40 32 AM](https://github.com/user-attachments/assets/10319046-cd06-4938-a4c0-0b9930064c9f)
-
+![interpreter_big_loop](https://github.com/user-attachments/assets/a58860d3-428e-4d80-9dab-84235162515c)
 
 ## Features
 - Easily upload assembly files using drag and drop
