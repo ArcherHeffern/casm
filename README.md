@@ -1,5 +1,12 @@
 # Brandeis Operating Systems MiniASM Interpreter and Visualizer
+__[Demo(TODO)](https://youtube.com)__
+## Visualizer
 <img width="912" alt="Screenshot 2024-11-05 at 9 44 58 PM" src="https://github.com/user-attachments/assets/9af2739d-0d0e-4927-95c5-ef48c93d5f55">
+
+## Interpreter
+
+![Screenshot 2024-11-14 at 7 40 32 AM](https://github.com/user-attachments/assets/10319046-cd06-4938-a4c0-0b9930064c9f)
+
 
 ## Features
 - Easily upload assembly files using drag and drop
