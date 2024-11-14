@@ -174,7 +174,7 @@ bool Step() {
 			asprintf(&FILE_PATH, "%s", tmp_file_path);
 			free(tmp_file_path);
 			int num_lines = 0;
-			char** program = FileReadLines(FILE_PATH, &num_lines);
+			char** program = FileReadLines(FILE_PATH, &num_lines, MEMORY_SIZE, SetErrorMsg);
 			if (program == NULL) {
 				finished_or_errored = true;
 			} else {
@@ -266,7 +266,7 @@ bool HandleFileUpload(char* path) {
 	asprintf(&FILE_PATH, "%s", path);
 
 	int num_lines;
-	char** program = FileReadLines(FILE_PATH, &num_lines);
+	char** program = FileReadLines(FILE_PATH, &num_lines, MEMORY_SIZE, SetErrorMsg);
 	if (program == NULL) {
 		return false;
 	}

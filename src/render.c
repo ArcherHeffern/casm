@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include "ui_internal.h"
 
 // ============
@@ -198,15 +199,26 @@ void RenderPopup() {
 	}
 
 	double opacity = s->render_info.popup_opacity;
-	char* msg;
+	char* msg = NULL;
 	Color background_color;
 	if (HasError()) {
 		char* current_memory = UIGetMemory(GetProgramCounter()*4);
-		asprintf(&msg, "Error at address %d executing '%s'\n%s\n", 
+		char* top_msg = NULL;
+		char* bottom_msg = NULL;
+		asprintf(&top_msg, "Error at address %d executing '%s'", 
 			GetProgramCounter()*4, 
-			current_memory!=NULL?current_memory:"000000",
-			GetErrorMsg()
+			current_memory!=NULL?current_memory:"000000"
 		);
+		char error_msg_cpy[strlen(GetErrorMsg())+1];
+		strcpy(error_msg_cpy, GetErrorMsg());
+
+		asprintf(&msg, "%s\n\n%s", 
+			JustifyText(top_msg, 39), 
+			JustifyText(error_msg_cpy, 39)
+		);
+
+		free(top_msg);
+		free(bottom_msg);
 		background_color = RED;
 	} else {
 		background_color = GREEN;
@@ -245,7 +257,7 @@ void RenderPopup() {
 	DrawTextPro(
 		GetFontDefault(),
 		msg, 
-		(Vector2){ .x=GetScreenWidth()/2 - textSize.x/2, .y=GetScreenHeight()/2 - textSize.y/2},
+		(Vector2) { .x=s->render_info.popup_box.x + 10, .y=s->render_info.popup_box.y + 20 },
 		origin,
 		0,
 		TEXT_SIZE, 

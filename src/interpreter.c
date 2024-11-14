@@ -18,7 +18,7 @@ void Run(char* filename) {
 		*s->registers[i] = 0;
 	}
     int num_lines;
-    char** program = FileReadLines(filename, &num_lines);
+    char** program = FileReadLines(filename, &num_lines, MEMORY_SIZE, SetErrorMsg);
     if (program == NULL) {
         printf("%s\n", GetErrorMsg());
         exit(1);
