@@ -125,19 +125,25 @@ void RenderStorageCell(State* state, int i) {
 	double* maybe_multiplier = StyleOverrideGet(state, STORAGE_CELL_SIZE_MULTIPLIER, i);
 	double multiplier = maybe_multiplier == NULL ? 1: *maybe_multiplier;
 	double scroll_offset = s->render_info.scroll_offset;
+	char* msg = storage[i];
+	Rectangle cell = {
+		.x=GetScreenWidth() - X_PADDING - CELL_WIDTH - 0.5 * (CELL_WIDTH * multiplier - CELL_WIDTH),
+		.y=y - 0.5 * (CELL_HEIGHT * multiplier - CELL_HEIGHT) + scroll_offset,
+		.width=CELL_WIDTH * multiplier,
+		.height=CELL_HEIGHT * multiplier
+	};
+	Vector2 text_size = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1);
 
-	DrawRectangle(
-		GetScreenWidth() - X_PADDING - CELL_WIDTH - 0.5 * (CELL_WIDTH * multiplier - CELL_WIDTH),
-		y - 0.5 * (CELL_HEIGHT * multiplier - CELL_HEIGHT) + scroll_offset,
-		CELL_WIDTH * multiplier,
-		CELL_HEIGHT * multiplier,
+	DrawRectangleRec(
+		cell,
 		CELL_COLOR
 	);
-	char* msg = NULL;
-	asprintf(&msg, "Ox%x: %s", i*4, storage[i]);
-	float textWidth = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1).x;
-	DrawText(msg, GetScreenWidth() - X_PADDING - CELL_WIDTH/2 - textWidth/2, y+CELL_HEIGHT/2+scroll_offset, TEXT_SIZE, FONT_COLOR);
-	free(msg);
+	DrawText(msg, cell.x+cell.width/2-text_size.x/2, cell.y + cell.height/2-text_size.y/2, TEXT_SIZE, FONT_COLOR);
+
+	char address[10];
+	sprintf(address, "%4d", i*4);
+	text_size = MeasureTextEx(GetFontDefault(), address, TEXT_SIZE, 1);
+	DrawText(address, cell.x+LABEL_BOX_PADDING/2, cell.y+cell.height - text_size.y - LABEL_BOX_PADDING, TEXT_SIZE, FONT_COLOR);
 }
 
 void RenderControls(State* state) {
