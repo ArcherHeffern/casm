@@ -2,14 +2,12 @@
 <img width="912" alt="Screenshot 2024-11-05 at 9 44 58 PM" src="https://github.com/user-attachments/assets/9af2739d-0d0e-4927-95c5-ef48c93d5f55">
 
 ## Features
-- Drag and drop a file in
-- Single (S)tepping
-- (C)ontinuing
-- Jump to (E)nd
-- (R)eset Program
-- Somewhat descriptive error reporting
-- Automatically detects changes to active assembly program, and reloads with new changes
-- Smooth animations, UI, and UX
+- Easily upload assembly files using drag and drop
+- Aids in visualization via single step and continue. Or jump to the end if thats not for you.
+- Get fast feedback to program changes. Casm detects changes to your assembly source file and automatically reloads file
+- Find syntax errors quickly with descriptive error messages
+- Pleasing to the eyes with smooth animations
+- Easy to use. Power and simplicity don't have to be mutually exclusive
 
 ## Getting Started
 1. Install precompiled binaries from releases  
