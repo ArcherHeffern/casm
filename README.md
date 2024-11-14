@@ -1,7 +1,8 @@
 # Brandeis Operating Systems MiniASM Interpreter and Visualizer
 __[Demo(TODO)](https://youtube.com)__
 ## Visualizer
-<img width="912" alt="Screenshot 2024-11-05 at 9 44 58 PM" src="https://github.com/user-attachments/assets/9af2739d-0d0e-4927-95c5-ef48c93d5f55">
+
+![visualizer_demo](https://github.com/user-attachments/assets/f9077f9c-567d-4874-976c-5069a905d3e6)
 
 ## Interpreter
 
