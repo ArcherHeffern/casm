@@ -221,7 +221,7 @@ void RenderPopup() {
 		free(bottom_msg);
 		background_color = RED;
 	} else {
-		background_color = GREEN;
+		background_color = DARKGREEN;
 		asprintf(&msg, "Program Complete!");
 	}
 	background_color = Fade(background_color, opacity);
