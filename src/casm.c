@@ -498,7 +498,7 @@ int GetMemory(int address) {
 	int contents = 0;
 	if (line == NULL || !ToInteger(line, &contents)) {
 		char* error_msg;
-		asprintf(&error_msg, "Cannot read memory address %d since it contains garbage or a non positive integer: '%s'\nWhile this is *Technically* valid, since every memory address is actually just numbers being interpreted as instructions and whatnot, I'm assuming this is not what you were intending.", address, line);
+		asprintf(&error_msg, "Cannot read memory address %d since it contains garbage or an instruction: '%s'\nWhile *Technically* valid, I'm assuming this was not intended.", address, line);
 		SetErrorMsg(error_msg);
 		return 0;
 	}
@@ -525,7 +525,7 @@ int GetStorage(int address) {
 	int contents = 0;
 	if (line == NULL || !ToInteger(line, &contents)) {
 		char* error_msg;
-		asprintf(&error_msg, "Cannot read storage address %d since it contains garbage or a non positive integer: '%s'\nWhile this is *Technically* valid, since every storage address is actually just numbers being interpreted as instructions and whatnot, I'm assuming this is not what you were intending.", address, line);
+		asprintf(&error_msg, "Cannot read storage address %d since it contains garbage or an instruction: '%s'\nWhile *Technically* valid, I'm assuming this was not intended.", address, line);
 		SetErrorMsg(error_msg);
 		return 0;
 	}

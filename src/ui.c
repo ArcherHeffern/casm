@@ -13,40 +13,47 @@
 #include "casm.h"
 #include "ui_internal.h"
 
-State* s = NULL;
-char* ErrorMsg = NULL;
+State *s = NULL;
+char *ErrorMsg = NULL;
 
-Color BACKGROUND_COLOR = { .r = 0x18, .g = 0x18, .b = 0x18, .a = 0xFF };
-Color FONT_COLOR = { .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
-Color CELL_COLOR = { .r = 0x2A, .g = 0x2C, .b = 0x2E, .a = 0xFF };
+Color BACKGROUND_COLOR = {.r = 0x18,.g = 0x18,.b = 0x18,.a = 0xFF };
+Color FONT_COLOR = {.r = 0xFF,.g = 0xFF,.b = 0xFF,.a = 0xFF };
+Color CELL_COLOR = {.r = 0x2A,.g = 0x2C,.b = 0x2E,.a = 0xFF };
+
 bool cont = false;
 bool end = false;
-char* EMPTY_CELL = "000000";
+char *EMPTY_CELL = "000000";
 
 int FD = -1;
-char* FILE_PATH = NULL;
+char *FILE_PATH = NULL;
 struct timespec LAST_MODIFICATION = { 0 };
 
 
-void Run(char* filename) {
-	InitWindow(800, 600, "Mini Asm");	
+void Run(char *filename)
+{
+	InitWindow(800, 600, "Mini Asm");
 	SetTargetFPS(60);
-	Rectangle memory_pointer = { // Program Counter Box
+	Rectangle memory_pointer = {	// Program Counter Box
 		.x = 0,
 		.y = 0,
 		.width = 270,
 		.height = 85
 	};
-	memory_pointer.x = X_PADDING - (memory_pointer.width - CELL_WIDTH) / 2;
-	memory_pointer.y = GetScreenHeight() / 2 - CELL_HEIGHT / 2 - (memory_pointer.height - CELL_HEIGHT) / 2;
+	memory_pointer.x =
+	    X_PADDING - (memory_pointer.width - CELL_WIDTH) / 2;
+	memory_pointer.y =
+	    GetScreenHeight() / 2 - CELL_HEIGHT / 2 -
+	    (memory_pointer.height - CELL_HEIGHT) / 2;
 
-	Rectangle storage_pointer = { // Active Storage Box
+	Rectangle storage_pointer = {	// Active Storage Box
 		.x = 0,
 		.y = 0,
 		.width = 270,
 		.height = 85
 	};
-	storage_pointer.x = GetScreenWidth() - X_PADDING - (storage_pointer.width - CELL_WIDTH) / 2 - CELL_WIDTH;
+	storage_pointer.x =
+	    GetScreenWidth() - X_PADDING - (storage_pointer.width -
+					    CELL_WIDTH) / 2 - CELL_WIDTH;
 	storage_pointer.y = memory_pointer.y;
 
 	Rectangle popup_box = {
@@ -55,15 +62,16 @@ void Run(char* filename) {
 		300,
 		150
 	};
-	popup_box.x = GetScreenWidth()/2-popup_box.width/2;
-	popup_box.y = GetScreenHeight()/2-popup_box.height/2;
+	popup_box.x = GetScreenWidth() / 2 - popup_box.width / 2;
+	popup_box.y = GetScreenHeight() / 2 - popup_box.height / 2;
 
-	int x_box_width = popup_box.width*0.1;
+	int x_box_width = popup_box.width * 0.1;
 	Rectangle x_box = {
-		.x=popup_box.x+popup_box.width-x_box_width-X_BOX_GAP,
-		.y=popup_box.y+X_BOX_GAP,
-		.width=x_box_width,
-		.height=x_box_width
+		.x = popup_box.x + popup_box.width - x_box_width -
+		    X_BOX_GAP,
+		.y = popup_box.y + X_BOX_GAP,
+		.width = x_box_width,
+		.height = x_box_width
 	};
 	Image x_button_image = LoadImage("./src/xbtn.png");
 	ImageResize(&x_button_image, x_box.width, x_box.height);
@@ -86,7 +94,7 @@ void Run(char* filename) {
 	assert(s != NULL);
 	memset(s, 0, sizeof(State));
 	for (int i = 0; i < 10; i++) {
-		s->registers[i] = (int*)malloc(sizeof(int));
+		s->registers[i] = (int *) malloc(sizeof(int));
 		*s->registers[i] = 0;
 	}
 	s->render_info = render_info;
@@ -103,34 +111,32 @@ void Run(char* filename) {
 // Runners
 // ============
 
-void StartVisualisation() {
+void StartVisualisation()
+{
 	for (int i = 0; i < MEMORY_SIZE; i++) {
 		s->memory[i] = EMPTY_CELL;
 	}
 	for (int i = 0; i < STORAGE_SIZE; i++) {
 		s->storage[i] = EMPTY_CELL;
 	}
-	RenderInfo* render_info = &s->render_info;
+	RenderInfo *render_info = &s->render_info;
 	Render(s);
 	SetActiveMemoryCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	Loop();
 	int gap = REGISTER_CELL_HEIGHT * REGISTER_CELL_GAP;
-	CreateAnimation(
-		s,
-		GetScreenHeight() - 10*(REGISTER_CELL_HEIGHT + gap) - 7,
-		&render_info->register_height,
-		IN_N_OUT,
-		SLIDE_IN_TIME,
-		0,
-		NULL
-	);
+	CreateAnimation(s,
+			GetScreenHeight() - 10 * (REGISTER_CELL_HEIGHT +
+						  gap) - 7,
+			&render_info->register_height, IN_N_OUT,
+			SLIDE_IN_TIME, 0, NULL);
 	Loop();
 	SetActiveStorageCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	Loop();
 	return;
 }
 
-void Loop() {
+void Loop()
+{
 	while (!WindowShouldClose()) {
 		if (!Step()) {
 			return;
@@ -138,7 +144,8 @@ void Loop() {
 	}
 }
 
-bool FileHasChanged() {
+bool FileHasChanged()
+{
 	if (FD == -1) {
 		return false;
 	}
@@ -147,15 +154,16 @@ bool FileHasChanged() {
 		perror("Fstat");
 	}
 	bool modified = false;
-	if (buf.st_mtimespec.tv_sec != LAST_MODIFICATION.tv_sec 
-		|| buf.st_mtimespec.tv_nsec != LAST_MODIFICATION.tv_nsec) {
+	if (buf.st_mtimespec.tv_sec != LAST_MODIFICATION.tv_sec
+	    || buf.st_mtimespec.tv_nsec != LAST_MODIFICATION.tv_nsec) {
 		modified = true;
 	}
 	LAST_MODIFICATION = buf.st_mtimespec;
 	return modified;
 }
 
-bool Step() {
+bool Step()
+{
 	bool animations_left = StepAnimations(s);
 	bool futures_left = StepFutures(s);
 	bool finished_or_errored = false;
@@ -166,7 +174,7 @@ bool Step() {
 
 	if (FileHasChanged() || IsKeyPressed(KEY_R)) {
 		if (FD != -1) {
-			char* tmp_file_path = NULL;
+			char *tmp_file_path = NULL;
 			asprintf(&tmp_file_path, "%s", FILE_PATH);
 			int tmp_fd = FD;
 			Reset();
@@ -174,7 +182,9 @@ bool Step() {
 			asprintf(&FILE_PATH, "%s", tmp_file_path);
 			free(tmp_file_path);
 			int num_lines = 0;
-			char** program = FileReadLines(FILE_PATH, &num_lines, MEMORY_SIZE, SetErrorMsg);
+			char **program =
+			    FileReadLines(FILE_PATH, &num_lines,
+					  MEMORY_SIZE, SetErrorMsg);
 			if (program == NULL) {
 				finished_or_errored = true;
 			} else {
@@ -187,7 +197,7 @@ bool Step() {
 	// double full_memory_height = (MEMORY_SIZE-1) * (CELL_HEIGHT + CELL_GAP);
 	// double full_storage_height = 0;
 	// double full_height = MaxDouble(full_memory_height, full_storage_height);
-	s->render_info.scroll_offset = s->render_info.scroll_offset+y;
+	s->render_info.scroll_offset = s->render_info.scroll_offset + y;
 
 	if (IsKeyPressed(KEY_C)) {
 		end = false;
@@ -206,19 +216,30 @@ bool Step() {
 
 	if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
 		Vector2 mouse_position = GetMousePosition();
-		if (s->render_info.popup_opacity == 1 && CheckCollisionPointRec(mouse_position, s->render_info.x_box)) {
-			CreateAnimation(s, 0, &s->render_info.popup_opacity, IN_N_OUT, POPUP_FADE_DURATION, 0, NULL);
+		if (s->render_info.popup_opacity == 1
+		    && CheckCollisionPointRec(mouse_position,
+					      s->render_info.x_box)) {
+			CreateAnimation(s, 0,
+					&s->render_info.popup_opacity,
+					IN_N_OUT, POPUP_FADE_DURATION, 0,
+					NULL);
 		}
 	}
 
 	if (finished_or_errored) {
-		CreateAnimation(s, 1, &s->render_info.popup_opacity, IN_N_OUT, POPUP_FADE_DURATION, 0, NULL);
+		CreateAnimation(s, 1, &s->render_info.popup_opacity,
+				IN_N_OUT, POPUP_FADE_DURATION, 0, NULL);
 	}
 
 	if (HasError() || GetHaltflag()) {
 		if (end) {
-			SetActiveMemoryCell(s, *s->registers[0], IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
-			SetActiveStorageCell(s, s->render_info.last_modified_storage_cell, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
+			SetActiveMemoryCell(s, *s->registers[0], IN_N_OUT,
+					    SET_ACTIVE_CELL_DURATION, 0);
+			SetActiveStorageCell(s,
+					     s->render_info.
+					     last_modified_storage_cell,
+					     IN_N_OUT,
+					     SET_ACTIVE_CELL_DURATION, 0);
 			end = false;
 		}
 		cont = false;
@@ -234,20 +255,23 @@ bool Step() {
 // ============
 // User Action Handlers
 // ============
-bool LoadProgram(char** program, int num_lines) {
+bool LoadProgram(char **program, int num_lines)
+{
 	Preprocess(&s->label_state, program, num_lines);
 	if (HasError()) {
 		return false;
 	}
 	for (int i = 0; i < num_lines; i++) {
-		SetMemoryCellValue(s, i, program[i], RESET_DURATION, i*RESET_DELAY);
+		SetMemoryCellValue(s, i, program[i], RESET_DURATION,
+				   i * RESET_DELAY);
 	}
 	return !HasError();
 }
 
-bool HandleFileDropped() {
+bool HandleFileDropped()
+{
 	if (!IsFileDropped()) {
-		return true; // True because this isn't an error
+		return true;	// True because this isn't an error
 	}
 	FilePathList files = LoadDroppedFiles();
 	assert(files.count > 0 && "Expected a file to be uploaded");
@@ -258,7 +282,8 @@ bool HandleFileDropped() {
 	return errored;
 }
 
-bool HandleFileUpload(char* path) {
+bool HandleFileUpload(char *path)
+{
 	if (path == NULL || !FileExists(path)) {
 		return false;
 	}
@@ -266,7 +291,8 @@ bool HandleFileUpload(char* path) {
 	asprintf(&FILE_PATH, "%s", path);
 
 	int num_lines;
-	char** program = FileReadLines(FILE_PATH, &num_lines, MEMORY_SIZE, SetErrorMsg);
+	char **program =
+	    FileReadLines(FILE_PATH, &num_lines, MEMORY_SIZE, SetErrorMsg);
 	if (program == NULL) {
 		return false;
 	}
@@ -274,7 +300,7 @@ bool HandleFileUpload(char* path) {
 	LoadProgram(program, num_lines);
 
 	if ((FD = open(FILE_PATH, O_RDONLY)) == -1) {
-		char* error_msg;
+		char *error_msg;
 		asprintf(&error_msg, "Failed to open file %s", FILE_PATH);
 		SetErrorMsg(error_msg);
 		return false;
@@ -286,7 +312,8 @@ bool HandleFileUpload(char* path) {
 }
 
 
-float Reset() {
+float Reset()
+{
 	cont = false;
 	end = false;
 	s->render_info.popup_opacity = 0;
@@ -301,24 +328,26 @@ float Reset() {
 		s->error_msg = NULL;
 	}
 
-	LabelState* ls = &s->label_state;
-	
+	LabelState *ls = &s->label_state;
+
 	for (int i = 0; i < ls->count; i++) {
 		free(ls->label_names[i]);
 		ls->label_names[i] = NULL;
-		ls->label_locations[i] = 0; 
+		ls->label_locations[i] = 0;
 		ls->label_jump_counts[i] = 0;
 	}
 	ls->count = 0;
 	s->haltflag = false;
 
-	CreateAnimation(s, 0, &s->render_info.scroll_offset, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0, NULL); // Set Scroll to baseline
+	CreateAnimation(s, 0, &s->render_info.scroll_offset, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0, NULL);	// Set Scroll to baseline
 	SetActiveMemoryCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	SetActiveStorageCell(s, 0, IN_N_OUT, SET_ACTIVE_CELL_DURATION, 0);
 	int mx = MinInt(MinInt(4, MEMORY_SIZE), STORAGE_SIZE);
 	for (int i = 0; i < mx; i++) {
-		SetMemoryCellValue(s, i, EMPTY_CELL, RESET_DURATION, i*RESET_DELAY);
-		SetStorageCellValue(s, i, EMPTY_CELL, RESET_DURATION, i*RESET_DELAY);
+		SetMemoryCellValue(s, i, EMPTY_CELL, RESET_DURATION,
+				   i * RESET_DELAY);
+		SetStorageCellValue(s, i, EMPTY_CELL, RESET_DURATION,
+				    i * RESET_DELAY);
 	}
 	for (int i = 4; i < MEMORY_SIZE; i++) {
 		s->memory[i] = EMPTY_CELL;
@@ -327,7 +356,8 @@ float Reset() {
 		s->storage[i] = EMPTY_CELL;
 	}
 	for (int i = 0; i < 10; i++) {
-		SetRegisterCellValue(s, i, 0, RESET_DURATION, i*RESET_DELAY);
+		SetRegisterCellValue(s, i, 0, RESET_DURATION,
+				     i * RESET_DELAY);
 	}
 	return 10 * RESET_DELAY;
 }
@@ -335,20 +365,33 @@ float Reset() {
 // ============
 // External Getters and Setters
 // ============
-int GetProgramCounter() { return UIGetRegister(0);}
+int GetProgramCounter()
+{
+	return UIGetRegister(0);
+}
 
-int UIGetRegister(int reg_num) {return *s->registers[reg_num];}
+int UIGetRegister(int reg_num)
+{
+	return *s->registers[reg_num];
+}
 
 
-char* UIGetMemory(int address) {return s->memory[address/4];}
+char *UIGetMemory(int address)
+{
+	return s->memory[address / 4];
+}
 
 
-char* UIGetStorage(int address) {return s->storage[address/4];}
+char *UIGetStorage(int address)
+{
+	return s->storage[address / 4];
+}
 
 
-void UISetRegister(int reg_num, int value) {
+void UISetRegister(int reg_num, int value)
+{
 	if (end) {
-		int* v = malloc(sizeof(int)); // TODO: Fix memory leak
+		int *v = malloc(sizeof(int));	// TODO: Fix memory leak
 		if (v == NULL) {
 			printf("Out of memory!\n");
 			exit(1);
@@ -358,48 +401,63 @@ void UISetRegister(int reg_num, int value) {
 		return;
 	}
 	if (reg_num == 0) {
-		SetActiveMemoryCell(s, value, IN_N_OUT, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
+		SetActiveMemoryCell(s, value, IN_N_OUT,
+				    SETTER_ANIMATION_DURATION,
+				    SETTER_ANIMATION_DELAY);
 	}
-	SetRegisterCellValue(s, reg_num, value, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
+	SetRegisterCellValue(s, reg_num, value, SETTER_ANIMATION_DURATION,
+			     SETTER_ANIMATION_DELAY);
 }
 
 
-void UISetMemory(int address, char* value) {
+void UISetMemory(int address, char *value)
+{
 	if (end) {
-		s->memory[address/4] = value;
+		s->memory[address / 4] = value;
 		return;
 	}
-	SetMemoryCellValue(s, address/4, value, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
+	SetMemoryCellValue(s, address / 4, value,
+			   SETTER_ANIMATION_DURATION,
+			   SETTER_ANIMATION_DELAY);
 }
 
 
-void UISetStorage(int address, char* value) {
+void UISetStorage(int address, char *value)
+{
 	if (end) {
-		s->render_info.last_modified_storage_cell = address/4;
-		s->storage[address/4] = value;
+		s->render_info.last_modified_storage_cell = address / 4;
+		s->storage[address / 4] = value;
 		return;
 	}
-	SetActiveStorageCell(s, address/4, IN_N_OUT, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
-	SetStorageCellValue(s, address/4, value, SETTER_ANIMATION_DURATION, SETTER_ANIMATION_DELAY);
+	SetActiveStorageCell(s, address / 4, IN_N_OUT,
+			     SETTER_ANIMATION_DURATION,
+			     SETTER_ANIMATION_DELAY);
+	SetStorageCellValue(s, address / 4, value,
+			    SETTER_ANIMATION_DURATION,
+			    SETTER_ANIMATION_DELAY);
 }
 
 
-bool GetHaltflag() {
+bool GetHaltflag()
+{
 	return s->haltflag;
 }
 
 
-char* GetErrorMsg() {
+char *GetErrorMsg()
+{
 	return s->error_msg;
 }
 
 
-void SetHaltflag(bool flag) {
+void SetHaltflag(bool flag)
+{
 	s->haltflag = flag;
 }
 
 
-void SetErrorMsg(char* msg) {
+void SetErrorMsg(char *msg)
+{
 	if (s->error_msg) {
 		free(msg);
 		return;
@@ -407,37 +465,44 @@ void SetErrorMsg(char* msg) {
 	s->error_msg = msg;
 }
 
-bool HasError() {
+bool HasError()
+{
 	return s->error_msg != NULL;
 }
 
 // ============
 // Debug
 // ============
-void PrintRegisters() {
+void PrintRegisters()
+{
 	printf("PC: %d\n", GetProgramCounter());
 	for (int i = 1; i < 10; i++) {
 		printf("R%d: %d\n", i, UIGetRegister(i));
 	}
 }
 
-void PrintMemory() {
-	PrintMemoryRange(0, MEMORY_SIZE-1);
+void PrintMemory()
+{
+	PrintMemoryRange(0, MEMORY_SIZE - 1);
 }
 
-void PrintMemoryRange(int lower, int upper) {
-	for (int i = lower/4; i < upper/4+1; i++) {
-		printf("%d: %s\n", i*4, UIGetMemory(i*4));
+void PrintMemoryRange(int lower, int upper)
+{
+	for (int i = lower / 4; i < upper / 4 + 1; i++) {
+		printf("%d: %s\n", i * 4, UIGetMemory(i * 4));
 	}
 }
 
 
-void PrintErrorMsg() {
+void PrintErrorMsg()
+{
 	if (!HasError()) {
-		printf("Attempted to print error msg when there was no error\n");
+		printf
+		    ("Attempted to print error msg when there was no error\n");
 		return;
 	}
 	int pc = GetProgramCounter();
-	printf("Error at address %d executing '%s'\n", pc*4, UIGetMemory(pc*4));
+	printf("Error at address %d executing '%s'\n", pc * 4,
+	       UIGetMemory(pc * 4));
 	printf("%s\n", GetErrorMsg());
 }
