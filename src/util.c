@@ -116,7 +116,7 @@ char** FileReadLines(char* filepath, int* num_lines, int max_lines, void (*SetEr
 	return lines;
 }
 
-char* JustifyText(const char *str, int max_width) {
+char* JustifyText(char *str, int max_width) {
 	// Infinite loops if theres a string longer than max_width!
 	int str_len = strlen(str);
 	char* out = malloc(str_len);

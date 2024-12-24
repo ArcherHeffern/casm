@@ -156,9 +156,16 @@ void ScannerScanNumber() {
 }
 
 bool ScannerContainsRegister() {
-	return scanner->cur - scanner->start == 2 
-		&& scanner->s[scanner->start] == 'R'
-		&& IsDigit(scanner->s[scanner->start+1]);
+	if (scanner->cur - scanner->start < 2 || scanner->s[scanner->start] != 'R') {
+		return false;
+	}
+
+	for (int i = scanner->start+1; i < scanner->cur; i++) {
+		if (!IsDigit(scanner->s[i])) {
+			return false;
+		}
+	}
+	return true;
 }
 
 TokenType ScannerCheckRest(int pos, char* s, int len, TokenType token) {
