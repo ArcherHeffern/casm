@@ -175,11 +175,14 @@ void ExecuteMath(TokenType instruction, Scanner* scanner) {
 	Register r1 = ScanRegister(scanner);
 	Consume(scanner, TOKEN_COMMA);
 	Register r2 = ScanRegister(scanner);
-	if (HasError()) {
+	if (!IsRegisterReadable(&r1)) {
 		return;
 	}
-	int op1 = GetRegister(r1.index);
-	int op2 = GetRegister(r2.index);
+	if (!IsRegisterReadable(&r2)) {
+		return;
+	}
+	int op1 = r1.index;
+	int op2 = r2.index;
 	int result = 0;
 	if (instruction == TOKEN_ADD) {
 		result = op1 + op2;
@@ -202,6 +205,9 @@ void ExecuteInc(Scanner* scanner) {
 
 void ExecuteLoad(Scanner* scanner) {
 	Register r1 = ScanRegister(scanner);
+	if (HasError()) {
+		return;
+	}
 	Consume(scanner, TOKEN_COMMA);
 	int value = ScanLoadValue(scanner);
 	if (HasError()) {
@@ -212,6 +218,9 @@ void ExecuteLoad(Scanner* scanner) {
 
 void ExecuteStore(Scanner* scanner) {
 	Register r1 = ScanRegister(scanner);
+	if (!IsRegisterReadable(&r1)) {
+		return;
+	}
 	Consume(scanner, TOKEN_COMMA);
 	int address = ScanStoreAddress(scanner); 
 	if (HasError()) {
@@ -235,6 +244,9 @@ void ExecuteRead(Scanner* scanner) {
 
 void ExecuteWrite(Scanner* scanner) {
 	Register r1 = ScanRegister(scanner);
+	if (!IsRegisterReadable(&r1)) {
+		return;
+	}
 	Consume(scanner, TOKEN_COMMA);
 	int address = ScanWriteAddress(scanner); 
 	if (HasError()) {
@@ -296,7 +308,7 @@ int ScanLabelIndex(Scanner* scanner, bool increment_count) {
 	char* label_ref = NULL;
 	asprintf(&label_ref, "%.*s", token->length, token->literal);
 	int address = GetLabelAddress(label_ref);
-	if (address != -1) {
+	if (address != -4) {
 		return address;
 	}
 	char* error_msg;
@@ -400,7 +412,11 @@ int ScanWriteAddress(Scanner* scanner) {
 // Addressing Primatives
 // ============
 int ScanDirectAddress(Scanner* scanner) {
-	return ScanRegister(scanner).value;
+	Register r = ScanRegister(scanner);
+	if (!IsRegisterReadable(&r)) {
+		return 0;
+	}
+	return r.value;
 }
 
 
@@ -415,30 +431,37 @@ int ScanIndexAddress(Scanner* scanner) {
 	int addr = ScanNumberValue(scanner);
 	Consume(scanner, TOKEN_COMMA);
 	Register r = ScanRegister(scanner);
+	if (!IsRegisterReadable(&r)) {
+		return 0;
+	}
 	Consume(scanner, TOKEN_R_BRACKET);
 	
 	if (HasError()) {
 		return 0;
 	}
 
-	return addr+r.value;
+	return addr+r.index;
 }
 
 
 int ScanIndirectAddress(Scanner* scanner) {
 	Advance(scanner);
-	int address = ScanRegister(scanner).value;
-
-	if (HasError()) {
+	Register r = ScanRegister(scanner);
+	if (!IsRegisterReadable(&r)) {
 		return 0;
 	}
 
-	return GetMemory(address);
+	return GetMemory(r.value);
 }
 
 int ScanRelativeAddress(Scanner* scanner) {
 	Advance(scanner);
-	int offset = ScanRegister(scanner).value;
+	Register r = ScanRegister(scanner);
+	if (!IsRegisterReadable(&r)) {
+		return 0;
+	}
+
+	int offset = r.value;
 	int pc = 4*(GetProgramCounter());
 	return offset+pc;
 }
@@ -450,8 +473,22 @@ Register ScanRegister(Scanner* scanner) {
 	if (!register_token) {
 		return r;
 	}
-	r.index = register_token->literal[1] - '0';
-	r.value = GetRegister(r.index);
+	int index = 0;
+	for (int i = 1; i < register_token->length; i++) {
+		index = index*10 + (register_token->literal[i] - '0');
+	}
+
+	if (index > MAX_REGISTERS || index < 1) {
+		char* error_msg;
+		asprintf(&error_msg, "General purpose registers range from 1-%d. Getting nonexistant register %d",
+			MAX_REGISTERS,
+			index);
+		SetErrorMsg(error_msg);
+		return r;
+	}
+
+	r.index = index;
+	r.value = UIGetRegister(r.index);
 	return r;
 }
 
@@ -467,21 +504,27 @@ int ScanNumberValue(Scanner* scanner) {
 // ============
 // Getters
 // ============
-int GetRegister(int reg_num) {
-	if (reg_num > MAX_REGISTERS || reg_num < 1) {
-		char* error_msg;
-		asprintf(&error_msg, "General purpose registers range from 1-%d. Getting nonexistant register %d",
-			MAX_REGISTERS,
-			reg_num);
-		SetErrorMsg(error_msg);
-		return 0;
+bool IsRegisterReadable(Register* reg) {
+	if (HasError()) {
+		return false;
 	}
-	return UIGetRegister(reg_num);
+	if (reg->value < 0) {
+		char* error_msg = NULL;
+		asprintf(&error_msg, "R%d contains garbage", reg->index);
+		// TODO: Figure out why segfault
+		// asprintf(&error_msg, "Cannot read register %d since it contains garbage\nWhile *Technically* valid, I'm assuming this was not intended.", reg_num);
+		SetErrorMsg(error_msg);
+		return false;
+	}
+	return true;
 }
 
 int GetMemory(int address) {
 	// M:[0, 1, 2, 3, 4]
 	// GetMemory(4) -> 1
+	if (HasError()) {
+		return 0;
+	}
 	if (address % 4 >= MEMORY_SIZE) {
 		char* error_msg;
 		asprintf(&error_msg, "Memory address '%d' greater than max memory size '%d'", address, MEMORY_SIZE);
@@ -509,6 +552,9 @@ int GetMemory(int address) {
 int GetStorage(int address) {
 	// S:[0, 1, 2, 3, 4]
 	// GetMemory(4) -> 1
+	if (HasError()) {
+		return 0;
+	}
 	if (address % 4 >= STORAGE_SIZE) {
 		char* error_msg;
 		asprintf(&error_msg, "Storage address '%d' greater than max storage size '%d'", address, STORAGE_SIZE);

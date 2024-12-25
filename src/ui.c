@@ -22,7 +22,6 @@ Color CELL_COLOR = {.r = 0x2A,.g = 0x2C,.b = 0x2E,.a = 0xFF };
 
 bool cont = false;
 bool end = false;
-char *EMPTY_CELL = "000000";
 
 int FD = -1;
 char *FILE_PATH = NULL;
@@ -95,7 +94,7 @@ void Run(char *filename)
 	memset(s, 0, sizeof(State));
 	for (int i = 0; i < 10; i++) {
 		s->registers[i] = (int *) malloc(sizeof(int));
-		*s->registers[i] = 0;
+		*s->registers[i] = GARBAGE;
 	}
 	s->render_info = render_info;
 
@@ -355,8 +354,9 @@ float Reset()
 	for (int i = 4; i < STORAGE_SIZE; i++) {
 		s->storage[i] = EMPTY_CELL;
 	}
-	for (int i = 0; i < 10; i++) {
-		SetRegisterCellValue(s, i, 0, RESET_DURATION,
+	SetRegisterCellValue(s, 0, 0, RESET_DURATION, 0);
+	for (int i = 1; i < 10; i++) {
+		SetRegisterCellValue(s, i, GARBAGE, RESET_DURATION,
 				     i * RESET_DELAY);
 	}
 	return 10 * RESET_DELAY;

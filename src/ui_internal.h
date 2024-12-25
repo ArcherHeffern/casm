@@ -41,6 +41,9 @@
 #define SETTER_ANIMATION_DELAY 0.0
 #define POPUP_FADE_DURATION 0.3
 
+#define EMPTY_CELL "garbage"
+#define GARBAGE -4 // Must be negative multiple of 4
+
 typedef struct State State;
 typedef struct RenderInfo RenderInfo;
 typedef struct Future Future;

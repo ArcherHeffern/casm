@@ -1,10 +1,9 @@
 LOAD R1, =100
-LOAD R2, =48
+LOAD R2, =24 		; Disk write address
 LOAD R3, =4
-LOAD R4, =8
-STORE R1, R2 ; M48:100
+WRITE R1, R2 		; S:24->100
+READ R4, R2			; R:4->100
 ADD R1, R3
-STORE R1, [4, R2] ; M52:104
-ADD R1, R3
-STORE R1, $R4 ; After haltflag: 108
+WRITE R1, [4, R2] 	; S:28->104
+READ R5, [4, R2]  	; R:5->104
 HALT

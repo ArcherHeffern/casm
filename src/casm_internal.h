@@ -45,6 +45,7 @@ Register ScanRegister(Scanner* scanner);
 int ScanNumberValue(Scanner* scanner);
 // Getters
 int GetRegister(int reg_num);
+bool IsRegisterReadable(Register* reg);
 int GetMemory(int address);
 int GetStorage(int address);
 // Setters

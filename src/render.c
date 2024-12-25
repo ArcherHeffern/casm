@@ -41,11 +41,19 @@ void RenderRegister(State* state, int i) {
 		REGISTER_CELL_HEIGHT,
 		CELL_COLOR
 	);
-	char* msg;
-	asprintf(&msg, "R%d: %d", i, *state->registers[i]);
+	char* msg = NULL;
+	if (*state->registers[i]==GARBAGE) {
+		asprintf(&msg, "R%d: %s", i, EMPTY_CELL);
+	} else {
+		asprintf(&msg, "R%d: %d", i, *state->registers[i]);
+	}
 	if (i == 0) {
 		free(msg);
-		asprintf(&msg, "PC: %d", *state->registers[0]);
+		if (*state->registers[0]==GARBAGE) {
+			asprintf(&msg, "PC: %s", EMPTY_CELL);
+		} else {
+			asprintf(&msg, "PC: %d", *state->registers[0]);
+		}
 	}
 	DrawText(msg, x+20, y+REGISTER_CELL_HEIGHT/2, TEXT_SIZE, faded_color);
 	free(msg);
@@ -210,21 +218,23 @@ void RenderPopup() {
 	if (HasError()) {
 		char* current_memory = UIGetMemory(GetProgramCounter()*4);
 		char* top_msg = NULL;
-		char* bottom_msg = NULL;
 		asprintf(&top_msg, "Error at address %d executing '%s'", 
 			GetProgramCounter()*4, 
-			current_memory!=NULL?current_memory:"000000"
+			current_memory!=NULL?current_memory:EMPTY_CELL
 		);
 		char error_msg_cpy[strlen(GetErrorMsg())+1];
 		strcpy(error_msg_cpy, GetErrorMsg());
 
+		char* justified_top_msg = JustifyText(top_msg, 39);
+		char* justified_error_msg = JustifyText(error_msg_cpy, 39);
 		asprintf(&msg, "%s\n\n%s", 
-			JustifyText(top_msg, 39), 
-			JustifyText(error_msg_cpy, 39)
+			justified_top_msg,
+			justified_error_msg
 		);
 
 		free(top_msg);
-		free(bottom_msg);
+		free(justified_top_msg);
+		free(justified_error_msg);
 		background_color = RED;
 	} else {
 		background_color = DARKGREEN;
