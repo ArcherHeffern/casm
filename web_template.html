@@ -5,14 +5,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casm Web</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            color: rgb(240, 240, 240);
+            text-align: center;
+            font-family: "Libre Baskerville", serif;
+            font-weight: 400;
+            font-stretch: 100%;
+        }
+        body {
+            background: #181818; 
+            margin: auto;
+        }
+
+        h1 {
+            font-size: 40px;
+        }
+
+        #gap {
+            margin-top: 70px;
+            margin-bottom: 30px;
+        }
+
+        #canvas {
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+            border: 1px solid white;
+        }
+
+        #output {
+            margin-top: 50px;
+            background-color: #181818;
+            text-align: left;
+            font-family: 'Courier New', Courier, monospace;
+            width: 800px;
+        }
+    </style>
 </head>
 
 <body>
-    <canvas style="margin-left: auto; margin-right: auto; display: block;" id="canvas"
+    <h1>Casm Visualizer</h1>
+    <p>Visualizer for Brandeis COSI-131's mock assembly language using C and Raylib. </p>
+    <p>Below is the visualizer compiled to WebAssembly and a video tutorial. The visualizer runs better natively since that's what it was designed for.</p>
+    <p>The source code, binaries, casm syntax guide, and sample programs are on Github:
+        <a href="https://github.com/ArcherHeffern/Casm">github.com/ArcherHeffern/Casm</a>
+    </p>
+
+    <iframe width="588" height="441"
+        src="https://www.youtube.com/embed/xfhzbw93rzw">
+    </iframe>
+
+    <h2 id="gap">
+        Drag in a casm file to get started
+    <h2/>
+
+    <canvas id="canvas"
         oncontextmenu="event.preventDefault()"></canvas>
     <progress hidden="" id="progress" max="1" value="0"></progress>
 
-    <textarea id="output" rows="1000" cols="100"></textarea>
+    <textarea id="output" rows="20"></textarea>
     <div class="emscripten" id="status"></div>
     <div class="spinner" id="spinner" style="display: none;"></div>
     <!-- Allow the C to access the canvas element -->
