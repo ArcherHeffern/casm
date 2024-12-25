@@ -144,28 +144,26 @@ void Loop()
 
 bool FileHasChanged()
 {
-	if (FD == -1) {
-		return false;
-	}
-	struct stat buf;
-	if (fstat(FD, &buf) == -1) {
-		perror("Fstat");
-	}
-	bool modified = false;
-
-	time_t modification_time_s;
 	#ifdef __EMSCRIPTEN__
-		modification_time_s = buf.st_mtime;
-		printf("Modification Time: %d\n", modification_time_s);
+		return false;
 	#else
-		modification_time_s = buf.st_mtimespec.tv_sec;
-	#endif // __EMSCRIPTEN__
+		if (FD == -1) {
+			return false;
+		}
+		struct stat buf;
+		if (fstat(FD, &buf) == -1) {
+			perror("Fstat");
+		}
+		bool modified = false;
 
-	if (modification_time_s != last_modification_time_s) {
-		modified = true;
-		last_modification_time_s = modification_time_s;
-	}
-	return modified;
+		time_t modification_time_s = buf.st_mtimespec.tv_sec;
+
+		if (modification_time_s != last_modification_time_s) {
+			modified = true;
+			last_modification_time_s = modification_time_s;
+		}
+		return modified;
+	#endif
 }
 
 bool Step()
@@ -200,6 +198,7 @@ bool Step()
 	}
 
 	double y = GetMouseWheelMoveV().y * SCROLL_SPEED;
+	// printf("Scroll Speed: %d\n", SCROLL_SPEED);
 	// double full_memory_height = (MEMORY_SIZE-1) * (CELL_HEIGHT + CELL_GAP);
 	// double full_storage_height = 0;
 	// double full_height = MaxDouble(full_memory_height, full_storage_height);

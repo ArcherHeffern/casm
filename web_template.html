@@ -11,7 +11,6 @@
     <style>
         * {
             color: rgb(240, 240, 240);
-            text-align: center;
             font-family: "Libre Baskerville", serif;
             font-weight: 400;
             font-stretch: 100%;
@@ -19,9 +18,12 @@
         body {
             background: #181818; 
             margin: auto;
+            padding-left: 150px;
+            padding-right: 150px;
         }
 
         h1 {
+            text-align: center;
             font-size: 40px;
         }
 
@@ -37,12 +39,21 @@
             border: 1px solid white;
         }
 
+        iframe {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         #output {
             margin-top: 50px;
             background-color: #181818;
             text-align: left;
             font-family: 'Courier New', Courier, monospace;
             width: 800px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
     </style>
 </head>
@@ -50,7 +61,7 @@
 <body>
     <h1>Casm Visualizer</h1>
     <p>Visualizer for Brandeis COSI-131's mock assembly language using C and Raylib. </p>
-    <p>Below is the visualizer compiled to WebAssembly and a video tutorial. The visualizer runs better natively since that's what it was designed for.</p>
+    <p>Below is the visualizer compiled to WebAssembly and a video tutorial. The visualizer runs better natively since that's what it was designed for. On Web, auto reloading on code updates are disabled and scrolling is slow and jittery.</p>
     <p>The source code, binaries, casm syntax guide, and sample programs are on Github:
         <a href="https://github.com/ArcherHeffern/Casm">github.com/ArcherHeffern/Casm</a>
     </p>

@@ -27,7 +27,11 @@
 #define CELL_HEIGHT 65
 #define CELL_WIDTH 250
 #define CELL_GAP 20
-#define SCROLL_SPEED 4
+#ifdef __EMSCRIPTEN__
+	#define SCROLL_SPEED 8
+#else
+	#define SCROLL_SPEED 4
+#endif // __EMSCRIPTEN__
 #define X_BOX_GAP 10
 #define POPUP_FADE_Y_DISPLACEMENT_PX 20
 #define POPUP_SHADOW_GAP 5
