@@ -23,6 +23,6 @@ int BoundInt(int v, int lower, int upper);
 float ParametricBlend(float t);
 float SinInAndBack(float t);
 char** FileReadLines(char* filepath, int* num_lines, int max_lines, void (*SetErrorMsg)(char*));
-char* JustifyText(const char *str, int max_width);
+void JustifyText(const char *str, int max_width);
 
 #endif

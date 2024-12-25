@@ -116,39 +116,33 @@ char** FileReadLines(char* filepath, int* num_lines, int max_lines, void (*SetEr
 	return lines;
 }
 
-char* JustifyText(char *str, int max_width) {
-	// Infinite loops if theres a string longer than max_width!
-	int str_len = strlen(str);
-	char* out = malloc(str_len);
-	memset(out, 0, str_len);
-	int cur = 0;
+void JustifyText(char *str, int max_width) {
+	// Justifies text in place
+	size_t length = strlen(str);
+	size_t prev_space = 0;
+	size_t cur_length = 0;
 
-	char* token;
-	int left_in_line = max_width;
+	for (int i = 0; i < length; i++) {
+		char c = str[i];
+		cur_length++;
 
-    while ((token = strsep(&str, "\n\t ")) != NULL) {
-		if (*token == '\0') {
-			continue;
+		if (c == '\n') {
+			cur_length = 0;
 		}
-		int token_len = strlen(token);
-		assert(token_len <= max_width && "JustifyText Does not support tokens longer than max_width");
-		left_in_line -= token_len + 1;
-		if (left_in_line < 0) {
-			out[cur-1] = '\n';
-			left_in_line = max_width-token_len;
+		else if (IsWhitespace(c)) {
+			prev_space = i;
 		}
-		memcpy(out+cur, token, token_len);
-		cur+=token_len;
-		out[cur++] = ' ';
-    }
-	out[cur] = '\0';
-	return out;
+		else if (cur_length > max_width) {
+			str[prev_space] = '\n';
+			cur_length = i - prev_space;
+		}
+	}
 }
 
 // int main() {
-// 	char* s = NULL; 
-// 	asprintf(&s, "Hello world how are you\t  doing yada ya da yada ");
-// 	printf("%s\n", JustifyText(s, 18));
+// 	char s[] = "Cannot read register 1 since it contains garbage\nWhile *Technically* valid, I'm assuming this was not intended.";
+// 	JustifyText(s, 18);
+// 	printf("%s\n", s);
 // }
 
 /*

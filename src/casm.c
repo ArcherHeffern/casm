@@ -8,8 +8,9 @@
 #include "casm.h"
 #include "ui.h"
 #include "casm_internal.h"
-
-
+#define READ_FROM_REGISTER_UB_MSG "Reading from R%d is undefined behavior since it contains garbage"
+#define READ_FROM_MEMORY_UB_MSG "Reading from memory address %d is undefined bahavior since it contains garbage or an instruction"
+#define READ_FROM_STORAGE_UB_MSG "Reading from storage address %d is undefined bahavior since it contains garbage"
 // ============
 // Entry Points
 // ============
@@ -510,9 +511,7 @@ bool IsRegisterReadable(Register* reg) {
 	}
 	if (reg->value < 0) {
 		char* error_msg = NULL;
-		asprintf(&error_msg, "R%d contains garbage", reg->index);
-		// TODO: Figure out why segfault
-		// asprintf(&error_msg, "Cannot read register %d since it contains garbage\nWhile *Technically* valid, I'm assuming this was not intended.", reg_num);
+		asprintf(&error_msg, READ_FROM_REGISTER_UB_MSG, reg->index);
 		SetErrorMsg(error_msg);
 		return false;
 	}
@@ -541,7 +540,7 @@ int GetMemory(int address) {
 	int contents = 0;
 	if (line == NULL || !ToInteger(line, &contents)) {
 		char* error_msg;
-		asprintf(&error_msg, "Cannot read memory address %d since it contains garbage or an instruction: '%s'\nWhile *Technically* valid, I'm assuming this was not intended.", address, line);
+		asprintf(&error_msg, READ_FROM_MEMORY_UB_MSG, address);
 		SetErrorMsg(error_msg);
 		return 0;
 	}
@@ -571,7 +570,7 @@ int GetStorage(int address) {
 	int contents = 0;
 	if (line == NULL || !ToInteger(line, &contents)) {
 		char* error_msg;
-		asprintf(&error_msg, "Cannot read storage address %d since it contains garbage or an instruction: '%s'\nWhile *Technically* valid, I'm assuming this was not intended.", address, line);
+		asprintf(&error_msg, READ_FROM_STORAGE_UB_MSG, address);
 		SetErrorMsg(error_msg);
 		return 0;
 	}

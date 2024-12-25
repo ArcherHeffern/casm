@@ -225,16 +225,15 @@ void RenderPopup() {
 		char error_msg_cpy[strlen(GetErrorMsg())+1];
 		strcpy(error_msg_cpy, GetErrorMsg());
 
-		char* justified_top_msg = JustifyText(top_msg, 39);
-		char* justified_error_msg = JustifyText(error_msg_cpy, 39);
+		JustifyText(top_msg, 39);
+		JustifyText(error_msg_cpy, 39);
+
 		asprintf(&msg, "%s\n\n%s", 
-			justified_top_msg,
-			justified_error_msg
+			top_msg,
+			error_msg_cpy
 		);
 
 		free(top_msg);
-		free(justified_top_msg);
-		free(justified_error_msg);
 		background_color = RED;
 	} else {
 		background_color = DARKGREEN;
