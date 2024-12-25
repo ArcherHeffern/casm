@@ -441,7 +441,7 @@ int ScanIndexAddress(Scanner* scanner) {
 		return 0;
 	}
 
-	return addr+r.index;
+	return addr+r.value;
 }
 
 
