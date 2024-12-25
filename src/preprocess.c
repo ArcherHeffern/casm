@@ -27,16 +27,17 @@ void Preprocess(LabelState* ls, char** lines, int num_lines) {
 			if (IsAlpha(line[cur])) {};
 			if (line[cur] == ':') {
 				if (cur == 0) {
-					char* error_msg = malloc(64);
+					char* error_msg = NULL;
 					asprintf(&error_msg, "Preprocess Error: Cannot have label with no name on line %d", i);
 					return;
 				}
-				char* label_name = malloc(cur);
+				char* label_name = malloc(cur+1);
 				memcpy(label_name, line, cur);
-				// Check for dupliacates 
+				label_name[cur] = '\0';
+				// Check for duplicates 
 				for (int j = 0; j < num_labels; j++) {
 					if (strcasecmp(ls->label_names[j], label_name) == 0) {
-						char* error_msg = malloc(64);
+						char* error_msg = NULL;
 						asprintf(&error_msg, "Preprocess Error: Found duplicate labels on lines %d and %d", ls->label_locations[j], i);
 						return;
 					}
@@ -46,7 +47,7 @@ void Preprocess(LabelState* ls, char** lines, int num_lines) {
 				line = line+cur+1;
 				while (IsWhitespace(*line)){line++;}
 				if (*line=='\0') {
-					char* error_msg = malloc(64);
+					char* error_msg = NULL;
 					asprintf(&error_msg, "Most have instruction on same line as a label on line %d", i);
 					return;
 				}
