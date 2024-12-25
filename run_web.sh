@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-npx http-server ./web/ -o -p 9999
+npx http-server ./web/ -o -c-1 -p 9999
