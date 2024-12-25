@@ -25,8 +25,7 @@ bool end = false;
 
 int FD = -1;
 char *FILE_PATH = NULL;
-struct timespec LAST_MODIFICATION = { 0 };
-
+time_t last_modification_time_s = 0;
 
 void Run(char *filename)
 {
@@ -153,11 +152,19 @@ bool FileHasChanged()
 		perror("Fstat");
 	}
 	bool modified = false;
-	if (buf.st_mtimespec.tv_sec != LAST_MODIFICATION.tv_sec
-	    || buf.st_mtimespec.tv_nsec != LAST_MODIFICATION.tv_nsec) {
+
+	time_t modification_time_s;
+	#ifdef __EMSCRIPTEN__
+		modification_time_s = buf.st_mtime;
+		printf("Modification Time: %d\n", modification_time_s);
+	#else
+		modification_time_s = buf.st_mtimespec.tv_sec;
+	#endif // __EMSCRIPTEN__
+
+	if (modification_time_s != last_modification_time_s) {
 		modified = true;
+		last_modification_time_s = modification_time_s;
 	}
-	LAST_MODIFICATION = buf.st_mtimespec;
 	return modified;
 }
 
@@ -306,7 +313,13 @@ bool HandleFileUpload(char *path)
 	}
 	struct stat buf;
 	fstat(FD, &buf);
-	LAST_MODIFICATION = buf.st_mtimespec;
+
+	#ifdef __EMSCRIPTEN__
+		last_modification_time_s = buf.st_mtime;
+	#else
+		last_modification_time_s = buf.st_mtimespec.tv_sec;
+	#endif // __EMSCRIPTEN__
+
 	return true;
 }
 
