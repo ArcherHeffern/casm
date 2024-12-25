@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+rm -rf web
 mkdir web
 
 emcc -o web/casm.html \
@@ -18,5 +19,6 @@ src/visualizer_main.c src/ui.c src/util.c src/casm.c src/preprocess.c src/lexer.
 -s TOTAL_MEMORY=67108864 \
 -s FORCE_FILESYSTEM=1 \
 -DPLATFORM_WEB \
+--shell-file='./web_template.html' \
 -s EXPORTED_FUNCTIONS='["_free","_malloc","_main"]' \
 -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]'
