@@ -5,7 +5,7 @@ set -euo pipefail
 rm -rf web
 mkdir web
 
-emcc -o web/casm.html \
+emcc -o web/index.html \
 src/visualizer_main.c src/ui.c src/util.c src/casm.c src/preprocess.c src/lexer.c src/animation.c src/complex_animations.c src/future.c src/render.c src/style_overrides.c \
 -Wall \
 -std=c99 \
