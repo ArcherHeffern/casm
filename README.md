@@ -1,5 +1,6 @@
 # Brandeis Operating Systems MiniASM Interpreter and Visualizer
-__[Demo(TODO)](https://youtube.com)__
+__[Online Demo](archerheffern.github.io/casm)__  
+__[Youtube Tutorial(TODO)](https://youtube.com)__
 ## Visualizer
 
 ![visualizer_demo](https://github.com/user-attachments/assets/f9077f9c-567d-4874-976c-5069a905d3e6)
