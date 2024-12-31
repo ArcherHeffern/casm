@@ -9,8 +9,10 @@ LIBS = -lraylib -lm
 SRC_DIR = src
 OBJ_DIR = obj
 RAYLIB_SRC_DIR = raylib-5.0/src
-OBJS = $(OBJ_DIR)/visualizer_main.o $(OBJ_DIR)/ui.o $(OBJ_DIR)/util.o $(OBJ_DIR)/casm.o $(OBJ_DIR)/preprocess.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/animation.o $(OBJ_DIR)/complex_animations.o $(OBJ_DIR)/future.o $(OBJ_DIR)/render.o $(OBJ_DIR)/style_overrides.o
-TARGET = main
+INTERPRETER_OBJS = $(OBJ_DIR)/interpreter_main.o $(OBJ_DIR)/interpreter.o $(OBJ_DIR)/util.o $(OBJ_DIR)/casm.o $(OBJ_DIR)/preprocess.o $(OBJ_DIR)/lexer.o
+VISUALISER_OBJS = $(OBJ_DIR)/visualizer_main.o $(OBJ_DIR)/ui.o $(OBJ_DIR)/util.o $(OBJ_DIR)/casm.o $(OBJ_DIR)/preprocess.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/animation.o $(OBJ_DIR)/complex_animations.o $(OBJ_DIR)/future.o $(OBJ_DIR)/render.o $(OBJ_DIR)/style_overrides.o
+VISUALIZER_TARGET = visualizer
+INTERPRETER_TARGET = interpreter
 
 # Platform-specific setup
 ifeq ($(shell uname), Darwin)
@@ -24,11 +26,17 @@ else
 endif
 
 # Default target
-all: $(OBJ_DIR) raylib $(TARGET)
+all: visualizer interpreter
+vis: $(VISUALISER_OBJS) raylib $(VISUALIZER_TARGET)
+interp: $(INTERPRETER_OBJS) raylib $(INTERPRETER_TARGET)
 
-# Target build
-$(TARGET): $(OBJS)
-	$(CC) $(WARNINGS) -o $@ $^ -L$(RAYLIB_LIB_DIR) $(LIBS) $(RAYLIB_BUILD_FLAGS)
+$(INTERPRETER_TARGET): $(INTERPRETER_OBJS)
+	mkdir -p $(PLATFORM)
+	$(CC) $(WARNINGS) -o $(PLATFORM)/$@ $^ -L$(RAYLIB_LIB_DIR) $(LIBS) $(RAYLIB_BUILD_FLAGS)
+
+$(VISUALIZER_TARGET): $(VISUALISER_OBJS)
+	mkdir -p $(PLATFORM)
+	$(CC) $(WARNINGS) -o $(PLATFORM)/$@ $^ -L$(RAYLIB_LIB_DIR) $(LIBS) $(RAYLIB_BUILD_FLAGS)
 
 # Compile source files into object files in obj directory
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
@@ -71,8 +79,8 @@ raylib_windows:
 
 # Clean up build files
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET) dist
+	rm -rf $(OBJ_DIR) dist macos 
 	cd $(RAYLIB_SRC_DIR) && $(MAKE) clean
 
-.PHONY: all clean dist-macos dist-linux raylib
+.PHONY: all visualizer interpreter clean dist-macos dist-linux raylib
 

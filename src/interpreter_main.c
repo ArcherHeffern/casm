@@ -7,7 +7,6 @@
 
 #define SHORT_WIDTH 4
 #define LONG_WIDTH 30
-const char* EMPTY_CELL = "000000";
 
 int main(int argc, char** argv) {
 	if (
