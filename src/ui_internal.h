@@ -73,7 +73,6 @@ struct RenderInfo {
 	int last_modified_storage_cell;
 	Rectangle popup_box;
 	Rectangle x_box;
-	Texture2D x_button;
 	double popup_opacity;
 	double scroll_offset;
 

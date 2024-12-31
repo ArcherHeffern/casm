@@ -71,10 +71,6 @@ void Run(char *filename)
 		.width = x_box_width,
 		.height = x_box_width
 	};
-	Image x_button_image = LoadImage("./src/xbtn.png");
-	ImageResize(&x_button_image, x_box.width, x_box.height);
-	Texture2D x_button = LoadTextureFromImage(x_button_image);
-	UnloadImage(x_button_image);
 
 	RenderInfo render_info = {
 		.register_height = GetScreenHeight(),
@@ -83,8 +79,7 @@ void Run(char *filename)
 		.memory_pointer = memory_pointer,
 		.storage_pointer = storage_pointer,
 		.popup_box = popup_box,
-		.x_box = x_box,
-		.x_button = x_button
+		.x_box = x_box
 	};
 
 
@@ -238,7 +233,7 @@ bool Step()
 
 	if (HasError() || GetHaltflag()) {
 		if (end) {
-			SetActiveMemoryCell(s, *s->registers[0], IN_N_OUT,
+			SetActiveMemoryCell(s, MaxInt(*s->registers[0], 0), IN_N_OUT,
 					    SET_ACTIVE_CELL_DURATION, 0);
 			SetActiveStorageCell(s,
 					     s->render_info.
@@ -514,7 +509,7 @@ void PrintErrorMsg()
 		return;
 	}
 	int pc = GetProgramCounter();
-	printf("Error at address %d executing '%s'\n", pc * 4,
+	printf("Error at address %d executing '%s'\n", MaxInt(pc * 4, 0),
 	       UIGetMemory(pc * 4));
 	printf("%s\n", GetErrorMsg());
 }

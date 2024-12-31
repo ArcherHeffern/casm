@@ -219,7 +219,7 @@ void RenderPopup() {
 		char* current_memory = UIGetMemory(GetProgramCounter()*4);
 		char* top_msg = NULL;
 		asprintf(&top_msg, "Error at address %d executing '%s'", 
-			GetProgramCounter()*4, 
+			MaxInt(GetProgramCounter()*4, 0), 
 			current_memory!=NULL?current_memory:EMPTY_CELL
 		);
 		char error_msg_cpy[strlen(GetErrorMsg())+1];
@@ -267,8 +267,16 @@ void RenderPopup() {
 	DrawRectanglePro(s->render_info.popup_box, origin, 0, background_color);
 	// X Button
 	DrawRectanglePro(s->render_info.x_box, origin, 0, button_color);
-	Rectangle r = {.height=s->render_info.x_box.height, .width=s->render_info.x_box.width, .x=0, .y=0};
-	DrawTexturePro(s->render_info.x_button, r, s->render_info.x_box, origin, 0, WHITE);
+	float w = s->render_info.x_box.width;
+	float h = 5;
+	// I'm a genius
+	float diag_total_width = (h+w)/sqrt(2);
+	float tidbit = h/sqrt(2);
+	Rectangle r = { .height=h, .width=w, .x=s->render_info.x_box.x + tidbit + (w-diag_total_width)/2, .y=s->render_info.x_box.y + (w-diag_total_width)/2 };
+	DrawRectanglePro(r, origin, 45, BLACK);
+	r.y = s->render_info.x_box.y + s->render_info.x_box.height - tidbit - (w-diag_total_width)/2;
+	r.x = s->render_info.x_box.x + (w-diag_total_width)/2;
+	DrawRectanglePro(r, origin, -45, BLACK);
 	DrawTextPro(
 		GetFontDefault(),
 		msg, 
