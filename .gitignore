@@ -1,10 +1,12 @@
-casm_macos
+# Targets
 main
+macos 
+linux 
+windows
+
+# Building
 obj
-dist
+
+# Misc
 .DS_Store
-raylib-5.0_macos
 .vscode
-interpreter*
-visualizer*
-out.txt

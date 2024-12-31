@@ -51,18 +51,6 @@ raylib: $(RAYLIB_SRC_DIR)/libraylib.a
 $(RAYLIB_SRC_DIR)/libraylib.a:
 	cd $(RAYLIB_SRC_DIR) && $(MAKE) PLATFORM=PLATFORM_DESKTOP
 
-# Distribution target for macOS
-macos: clean raylib all
-	mkdir -p dist/macos
-	cp $(TARGET) dist/macos/
-	cp -R $(RAYLIB_LIB_DIR) dist/macos/
-
-# Distribution target for Linux
-linux: clean raylib all
-	mkdir -p dist/linux
-	cp $(TARGET) dist/linux/
-	cp -R $(RAYLIB_LIB_DIR) dist/linux/
-
 # Windows cross-compilation setup
 windows: CC = x86_64-w64-mingw32-gcc
 windows: INCLUDE_PATH = -I./raylib-5.0/src
@@ -79,8 +67,8 @@ raylib_windows:
 
 # Clean up build files
 clean:
-	rm -rf $(OBJ_DIR) dist macos 
+	rm -rf $(OBJ_DIR) macos 
 	cd $(RAYLIB_SRC_DIR) && $(MAKE) clean
 
-.PHONY: all visualizer interpreter clean dist-macos dist-linux raylib
+.PHONY: all vis interp clean raylib
 
