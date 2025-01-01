@@ -76,7 +76,12 @@ int main(int argc, char** argv) {
 
     if (rules != NULL) {
         RunTests(rules);
-        PrintReport(rules);
+        if (output_file) {
+            int f = open(output_file, O_WRONLY|O_CREAT|O_TRUNC, 777);
+            FileReport(rules, f);
+        } else {
+            PrintReport(rules);
+        }
         exit(0);
     }
 
@@ -146,5 +151,6 @@ void PrintHelp(bool error) {
     printf("-h|-help: Print help message\n");
     printf("-o|-outfile: Output File\n");
     printf("-t|-testfile: Test File\n");
+    printf("Pairing -testfile and -outfile writes test results in a program parsable format documented in README.md:## Test Output File Format \n");
     exit(error);
 }

@@ -1,5 +1,4 @@
 #include "test.h"
-#include "ui_internal.h"
 
 Rules* RulesCreate(FILE* file) {
     Rules* rules = malloc(sizeof(Rules));
@@ -212,7 +211,25 @@ void RunTest(Rule* rule) {
     }
 }
 
+void FileReport(Rules* rules, int fd) {
+    char null_term = '\0';
+    if (rules->runtime_error) {
+        write(fd, rules->runtime_error, strlen(rules->runtime_error));
+    }
+    write(fd, &null_term, 1);
+    for (int i = 0; i < rules->size; i++) {
+        if (rules->rules[i]->actual != NULL) {
+            write(fd, rules->rules[i]->actual, strlen(rules->rules[i]->actual));
+        }
+        write(fd, &null_term, 1);
+    }
+}
+
 void PrintReport(Rules* rules) {
+    if (rules->runtime_error) {
+        int pc = GetProgramCounter();
+        printf("Error at address %d executing '%s'\n", pc*4, UIGetMemory(pc*4)?UIGetMemory(pc*4): EMPTY_CELL);
+    }
     for (int i = 0; i < rules->size; i++) {
         Rule* rule = rules->rules[i];
         char c;

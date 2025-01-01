@@ -7,6 +7,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
+
+#include "ui_internal.h"
 
 #define DEFAULT_RULES_CAPACITY 8
 #define TESTFILE_COMMENT '#'
@@ -43,4 +46,5 @@ void RulesDestroy(Rules* rules);
 void RunTests(Rules* rules);
 void RunTest(Rule* rule);
 void PrintReport(Rules* rules);
+void FileReport(Rules* rules, int fd);
 #endif // TEST_H_

@@ -150,10 +150,9 @@ Branch if Not Equal
 * Description: Jumps to \<label\> if Ri != Rj
 
 # Tests
-`./interpreter casm_file test_file
+`./interpreter casm_file -t test_file`
 
-Test File Format
-
+## Test File Format
 FILE = RULE "\n" *  
 RULE = LOCATION " " EXPECTED_VALUE  
 LOCATION = ADDRESS | "AFTER_HALTFLAG"  
@@ -161,7 +160,7 @@ ADDRESS = MEMTYPE 0..limit
 MEMTYPE = "R" | "M" | "S"  
 EXPECTED_VALUE = \d+
   
-Test output format  
+## Test Output File Format  
 RESULT = COMPILE_STATUS "\0" RULE_STATUSES  
 COMPILE_STATUS = Failure reason | ""  
 RULE_STATUSES = RULE_STATUS "\0"  
@@ -171,18 +170,32 @@ RULE_STATUS = "" | "Expected " NUMBER "but found " NUMBER
 Designed to be used with CASM-Darwin for TA's
 
 Student Submission Protocol: 
-students
 <div>
--- student{n}.zip/
-|	| -- p1.casm
-|	| -- p2.casm
-|	| -- ps.pdf
-|
-...
+| -- student{n}.zip/
+|   	| -- p1.casm
+|		| -- p2.casm
+|		| -- ps.pdf
 </div>
 
 If doesn't match naming convention, points off and TA will have to manually fix
 If doesn't compile -> 0 (You have an interpreter now...)
+
+Darwin File Format
+<div>
+.darwinC/
+|	| -- student{n}/
+|	|   	| -- p1.casm
+|	|		| -- p2.casm
+|	|
+|	| -- ...
+|
+| -- tests/
+|	  | -- t1.test
+|	  | -- t2.test
+|	  | -- ... 
+|
+| -- results/
+</div>
 
 Test Mode: 
 for student in students:
