@@ -6,6 +6,7 @@
 
 #include "ui.h"
 #include "ui_internal.h"
+#include "test.h"
 
 #define SHORT_WIDTH 4
 #define LONG_WIDTH 30
@@ -47,27 +48,38 @@ int main(int argc, char** argv) {
         PrintHelp(true);
     }
 
-    // Open user provided output file confirm we can overwrite
-    if (!FileExists(argv[1])) {
-        fprintf(stderr, "Error: '%s' does not exist\n", argv[1]);
+    if (!FileExists(program_file)) {
+        fprintf(stderr, "Error: '%s' does not exist\n", program_file);
         exit(1);
     }
-    if (argc != 3) {}
-    else if (strcmp(argv[2], "-") == 0) {}
-    else {
-        if (FileExists(argv[2])) {
-            char exists;
-            printf("%s exists. Overwrite? (Y/N)\n", argv[2]);
-            scanf("%c", &exists);
-            if (exists != 'y' && exists != 'Y') {
-                printf("Aborting...\n");
-                exit(0);
-            }
-            printf("Proceeding...\n");
+    if (FileExists(output_file)) {
+        printf("%s exists. Overwrite? (Y/N)\n", output_file);
+        char exists = getc(stdin);
+        if (exists != 'y' && exists != 'Y') {
+            printf("Aborting...\n");
+            exit(0);
         }
-    } 
+        printf("Proceeding...\n");
+    }
 
-    Run(argv[1]);
+    Rules* rules = NULL;
+    if (test_file) {
+        if (!FileExists(test_file)) {
+            fprintf(stderr, "Test file %s does not exist\n", test_file);
+            exit(1);
+        }
+        FILE* f = fopen(test_file, "r");
+        rules = RulesCreate(f);
+    }
+
+    Run(program_file);
+
+    if (rules != NULL) {
+        RunTests(rules);
+        PrintReport(rules);
+        exit(0);
+    }
+
 
     int f = -1;
     if (output_file != NULL) {
