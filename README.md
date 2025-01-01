@@ -148,3 +148,42 @@ Branch if Equal
 Branch if Not Equal
 * Syntax: BNEQ \<register:Ri\>, \<register:Rj\>, \<label_ref\>
 * Description: Jumps to \<label\> if Ri != Rj
+
+# Tests
+`./interpreter casm_file test_file
+
+Test File Format
+
+FILE = RULE "\n" *
+RULE = ADDRESS " " VALUE
+
+Test output format
+RESULT = COMPILE_STATUS "\0" RULE_STATUSES
+COMPILE_STATUS = Failure reason | ""
+RULE_STATUSES = RULE_STATUS "\0"
+RULE_STATUS = "" | "Expected " NUMBER "but found " NUMBER
+
+# TA Testing 
+Designed to be used with CASM-Darwin for TA's
+
+Student Submission Protocol: 
+students
+-- student{n}.zip/
+|	| -- p1.casm
+|	| -- p2.casm
+|	| -- ps.pdf
+|
+...
+
+If doesn't match naming convention, points off and TA will have to manually fix
+If doesn't compile -> 0 (You have an interpreter now...)
+
+Test Mode: 
+for student in students:
+	for test in student.tests:
+		Show Code and Any error messages
+
+COMMANDS:
+project-init SUBMISSION_ZIPFILE TESTFILES...
+run_tests # Runs all tests on all students. Since running tests is fast, there is no need to more granularity. Outputs results to .darwinC/results.txt
+Maybe View submissions: Hosts server to view student submissions and shows any error messages if we ran tests. 
