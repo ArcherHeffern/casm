@@ -15,6 +15,7 @@ __[Youtube Tutorial(TODO)](https://youtube.com)__
 
 ## Features
 - Easily upload assembly files using drag and drop
+- Testing Framework for viewing or integration into other tools
 - Aids in visualization via single step and continue. Or jump to the end if thats not for you.
 - Get fast feedback to program changes. Casm detects changes to your assembly source file and automatically reloads file
 - Find syntax errors quickly with descriptive error messages
@@ -23,15 +24,34 @@ __[Youtube Tutorial(TODO)](https://youtube.com)__
 
 ## Getting Started
 1. Install precompiled binaries from releases  
-Run on the command line `./casm [assembly_program]`
+Run on the command line `./visualizer|./interpreter [assembly_program]`
 
 2. Build from source
 ``` bash
 	git clone https://github.com/ArcherHeffern/casm.git
-	make [macos|windows|linux]
-	./main [assembly_program]
+	make [all|interp|vis]
+	./macos/visualizer [assembly_program]
 ```
-NOTE: I have not yet tested the windows and linux targets. Let me know if you run into any issues running these
+NOTE: I have not yet tested the windows target. Let me know if you run into any issues running these
+
+# Tests
+`./interpreter casm_file -t test_file`  
+
+See test/ for example tests
+
+## Test File Format
+FILE = RULE "\n" *  
+RULE = LOCATION " " EXPECTED_VALUE  
+LOCATION = ADDRESS | "AFTER_HALTFLAG"  
+ADDRESS = MEMTYPE 0..limit  
+MEMTYPE = "R" | "M" | "S"  
+EXPECTED_VALUE = \d+
+  
+## Test Output File Format  
+RESULT = COMPILE_STATUS "\0" RULE_STATUSES  
+COMPILE_STATUS = Failure reason | ""  
+RULE_STATUSES = RULE_STATUS "\0"  
+RULE_STATUS = "" | "Expected " NUMBER "but found " NUMBER  
 
 # Instruction Set Overview
 ## Syntax Definitions
@@ -148,61 +168,3 @@ Branch if Equal
 Branch if Not Equal
 * Syntax: BNEQ \<register:Ri\>, \<register:Rj\>, \<label_ref\>
 * Description: Jumps to \<label\> if Ri != Rj
-
-# Tests
-`./interpreter casm_file -t test_file`
-
-## Test File Format
-FILE = RULE "\n" *  
-RULE = LOCATION " " EXPECTED_VALUE  
-LOCATION = ADDRESS | "AFTER_HALTFLAG"  
-ADDRESS = MEMTYPE 0..limit  
-MEMTYPE = "R" | "M" | "S"  
-EXPECTED_VALUE = \d+
-  
-## Test Output File Format  
-RESULT = COMPILE_STATUS "\0" RULE_STATUSES  
-COMPILE_STATUS = Failure reason | ""  
-RULE_STATUSES = RULE_STATUS "\0"  
-RULE_STATUS = "" | "Expected " NUMBER "but found " NUMBER  
-
-# TA Testing 
-Designed to be used with CASM-Darwin for TA's
-
-Student Submission Protocol: 
-<div>
-| -- student{n}.zip/
-|   	| -- p1.casm
-|		| -- p2.casm
-|		| -- ps.pdf
-</div>
-
-If doesn't match naming convention, points off and TA will have to manually fix
-If doesn't compile -> 0 (You have an interpreter now...)
-
-Darwin File Format
-<div>
-.darwinC/
-|	| -- student{n}/
-|	|   	| -- p1.casm
-|	|		| -- p2.casm
-|	|
-|	| -- ...
-|
-| -- tests/
-|	  | -- t1.test
-|	  | -- t2.test
-|	  | -- ... 
-|
-| -- results/
-</div>
-
-Test Mode: 
-for student in students:
-	for test in student.tests:
-		Show Code and Any error messages
-
-COMMANDS:
-project-init SUBMISSION_ZIPFILE TESTFILES...
-run_tests # Runs all tests on all students. Since running tests is fast, there is no need to more granularity. Outputs results to .darwinC/results.txt
-Maybe View submissions: Hosts server to view student submissions and shows any error messages if we ran tests. 
