@@ -4,7 +4,7 @@ Rules* RulesCreate(FILE* file) {
     Rules* rules = malloc(sizeof(Rules));
     rules->size = 0;
     rules->capacity = DEFAULT_RULES_CAPACITY;
-    rules->rules = malloc(sizeof(int)*DEFAULT_RULES_CAPACITY);
+    rules->rules = malloc(sizeof(Rule*)*DEFAULT_RULES_CAPACITY);
 
     char *line = NULL;
     size_t linecap = 0;
