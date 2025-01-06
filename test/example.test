@@ -1,0 +1,5 @@
+R1 18#Comment
+M12 44
+S400 11
+# Should allow for comments and empty lines
+# Parse Errors: Addresses not divisable by 4. Negative addresses. Non existing memory type ~(R,M,S)

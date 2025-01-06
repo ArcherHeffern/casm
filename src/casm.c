@@ -182,8 +182,8 @@ void ExecuteMath(TokenType instruction, Scanner* scanner) {
 	if (!IsRegisterReadable(&r2)) {
 		return;
 	}
-	int op1 = r1.index;
-	int op2 = r2.index;
+	int op1 = r1.value;
+	int op2 = r2.value;
 	int result = 0;
 	if (instruction == TOKEN_ADD) {
 		result = op1 + op2;
