@@ -13,7 +13,13 @@
 #include "casm.h"
 #include "ui_internal.h"
 
-#define FONT "./font/Roboto-SemiBold.ttf"
+/*
+ * Good fonts:
+ * NotoSans-Regular.ttf : 18
+ * NotoSans-SemiBold.ttf : 18
+ * NotoSans-Medium.ttf : 18
+*/
+#define FONT "./font/static/NotoSans-Medium.ttf"
 State *s = NULL;
 char *ErrorMsg = NULL;
 
