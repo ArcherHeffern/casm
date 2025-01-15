@@ -241,7 +241,6 @@ void RenderPopup() {
 	}
 	background_color = Fade(background_color, opacity);
 	Color button_color = Fade(WHITE, opacity);
-	Vector2 textSize = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1);
 	Color font_color = Fade(FONT_COLOR, opacity);
 	Color shadow_color = Fade(WHITE, opacity);
 

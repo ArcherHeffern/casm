@@ -1,0 +1,12 @@
+        LOAD R1, =0
+        LOAD R2, =10
+        LOAD R3, =1
+        LOAD R4, =4
+        LOAD R5, =0
+Label: 	BGEQ R1, R2, Label2 
+        INC R1 
+        MUL R3, R4
+        ADD R5, R4
+        WRITE R3, R5
+        BR Label
+Label2:	HALT
