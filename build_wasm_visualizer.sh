@@ -24,6 +24,7 @@ src/visualizer_main.c src/ui.c src/util.c src/casm.c src/preprocess.c src/lexer.
 -DPLATFORM_WEB \
 --shell-file='./web_template.html' \
 -s EXPORTED_FUNCTIONS='["_free","_malloc","_main"]' \
--s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]'
+-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' \
+--embed-file font/
 
 cp ./sample_programs/big_loop.a ${WEB_DIR}

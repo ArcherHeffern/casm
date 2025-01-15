@@ -3,6 +3,7 @@
 #define UI_H_
 
 #include <stdbool.h>
+#include <raylib.h>
 
 /* Interpreter Constants */
 #define MEMORY_SIZE 64
@@ -33,7 +34,8 @@ char* GetErrorMsg();
 void SetHaltflag(bool flag);
 void SetErrorMsg(char* msg);
 bool HasError();
-
+void ADrawText(const char *text, int posX, int posY, int fontSize, Color color); 
+void ADrawTextPro(const char *text, Vector2 position, Vector2 origin, float rotation, float fontSize, float spacing, Color tint);
 
 // ============
 // Debug

@@ -55,7 +55,7 @@ void RenderRegister(State* state, int i) {
 			asprintf(&msg, "PC: %d", *state->registers[0]);
 		}
 	}
-	DrawText(msg, x+20, y+REGISTER_CELL_HEIGHT/2, TEXT_SIZE, faded_color);
+	ADrawText(msg, x+20, y+REGISTER_CELL_HEIGHT/2, TEXT_SIZE, faded_color);
 	free(msg);
 }
 
@@ -92,7 +92,7 @@ void RenderMemoryCell(State* state, int i) {
 		cell,
 		CELL_COLOR
 	);
-	DrawText(msg, cell.x+cell.width/2-text_size.x/2, cell.y + cell.height/2-text_size.y/2, TEXT_SIZE, FONT_COLOR);
+	ADrawText(msg, cell.x+cell.width/2-text_size.x/2, cell.y + cell.height/2-text_size.y/2, TEXT_SIZE, FONT_COLOR);
 
 	// Label Box
 	if (label_name) {
@@ -104,14 +104,14 @@ void RenderMemoryCell(State* state, int i) {
 			.height=text_size.y + LABEL_BOX_PADDING
 		};
 		DrawRectangleLinesEx(label_box, 1.0F, FONT_COLOR);
-		DrawText(label_name, label_box.x+LABEL_BOX_PADDING/2, label_box.y+LABEL_BOX_PADDING/2, TEXT_SIZE, FONT_COLOR);
+		ADrawText(label_name, label_box.x+LABEL_BOX_PADDING/2, label_box.y+LABEL_BOX_PADDING/2, TEXT_SIZE, FONT_COLOR);
 	}
 
 	// Address Box
 	char address[10];
 	sprintf(address, "%4d", i*4);
 	text_size = MeasureTextEx(GetFontDefault(), address, TEXT_SIZE, 1);
-	DrawText(address, cell.x+LABEL_BOX_PADDING/2, cell.y+cell.height - text_size.y - LABEL_BOX_PADDING, TEXT_SIZE, FONT_COLOR);
+	ADrawText(address, cell.x+LABEL_BOX_PADDING/2, cell.y+cell.height - text_size.y - LABEL_BOX_PADDING, TEXT_SIZE, FONT_COLOR);
 }
 
 void RenderStorage(State* state) {
@@ -146,12 +146,12 @@ void RenderStorageCell(State* state, int i) {
 		cell,
 		CELL_COLOR
 	);
-	DrawText(msg, cell.x+cell.width/2-text_size.x/2, cell.y + cell.height/2-text_size.y/2, TEXT_SIZE, FONT_COLOR);
+	ADrawText(msg, cell.x+cell.width/2-text_size.x/2, cell.y + cell.height/2-text_size.y/2, TEXT_SIZE, FONT_COLOR);
 
 	char address[10];
 	sprintf(address, "%4d", i*4);
 	text_size = MeasureTextEx(GetFontDefault(), address, TEXT_SIZE, 1);
-	DrawText(address, cell.x+LABEL_BOX_PADDING/2, cell.y+cell.height - text_size.y - LABEL_BOX_PADDING, TEXT_SIZE, FONT_COLOR);
+	ADrawText(address, cell.x+LABEL_BOX_PADDING/2, cell.y+cell.height - text_size.y - LABEL_BOX_PADDING, TEXT_SIZE, FONT_COLOR);
 }
 
 void RenderControls(State* state) {
@@ -164,7 +164,7 @@ void RenderControls(State* state) {
 
 	char* instruction = "Drag assembly file to upload";
 	Vector2 textSize = MeasureTextEx(GetFontDefault(), instruction, TEXT_SIZE, 1);
-	DrawText(instruction, GetScreenWidth()/2 - textSize.x/2, top - REGISTER_CELL_HEIGHT*.75, TEXT_SIZE, FONT_COLOR);
+	ADrawText(instruction, GetScreenWidth()/2 - textSize.x/2, top - REGISTER_CELL_HEIGHT*.75, TEXT_SIZE, FONT_COLOR);
 	
 	RenderButton(state, left, top, "(S)tep");
 	RenderButton(state, right, top, "(C)ontinue");
@@ -184,7 +184,7 @@ void RenderButton(State* state, int x, int y, char* text) {
 	};
 	DrawRectangleRec(button, render_info->button_color);
 	Vector2 textSize = MeasureTextEx(GetFontDefault(), text, TEXT_SIZE, 1);
-	DrawText(
+	ADrawText(
 		text, 
 		button.x+button.width/2-textSize.x/2, 
 		button.y+button.height/2-textSize.y/2, 
@@ -198,12 +198,12 @@ void RenderHeader() {
 
 	float textWidth = MeasureTextEx(GetFontDefault(), "Registers", HEADER_SIZE, 1).x;
 	Vector2 position = { .x=GetScreenWidth()/2 - textWidth/2, .y=CELL_GAP };
-	DrawTextEx(GetFontDefault(), "registers", position, HEADER_SIZE, 1, FONT_COLOR);
+	ADrawText("registers", position.x, position.y, HEADER_SIZE, FONT_COLOR);
 
-	DrawText("Memory", X_PADDING, CELL_GAP, HEADER_SIZE, FONT_COLOR); // Title
+	ADrawText("Memory", X_PADDING, CELL_GAP, HEADER_SIZE, FONT_COLOR); // Title
 
 	textWidth = MeasureTextEx(GetFontDefault(), "Storage", HEADER_SIZE, 1).x;
-	DrawText("Storage", GetScreenWidth() - X_PADDING - textWidth, CELL_GAP, HEADER_SIZE, FONT_COLOR);
+	ADrawText("Storage", GetScreenWidth() - X_PADDING - textWidth, CELL_GAP, HEADER_SIZE, FONT_COLOR);
 	
 }
 
@@ -276,8 +276,7 @@ void RenderPopup() {
 	r.y = s->render_info.x_box.y + s->render_info.x_box.height - tidbit - (w-diag_total_width)/2;
 	r.x = s->render_info.x_box.x + (w-diag_total_width)/2;
 	DrawRectanglePro(r, origin, -45, BLACK);
-	DrawTextPro(
-		GetFontDefault(),
+	ADrawTextPro(
 		msg, 
 		(Vector2) { .x=s->render_info.popup_box.x + 10, .y=s->render_info.popup_box.y + 20 },
 		origin,

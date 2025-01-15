@@ -13,6 +13,7 @@
 #include "casm.h"
 #include "ui_internal.h"
 
+#define FONT "./font/Roboto-SemiBold.ttf"
 State *s = NULL;
 char *ErrorMsg = NULL;
 
@@ -22,15 +23,32 @@ Color CELL_COLOR = {.r = 0x2A,.g = 0x2C,.b = 0x2E,.a = 0xFF };
 
 bool cont = false;
 bool end = false;
+Font font = {0};
 
 int FD = -1;
 char *FILE_PATH = NULL;
 time_t last_modification_time_s = 0;
 
+void ADrawText(const char *text, int posX, int posY, int fontSize, Color color) {
+	// Logic taken from raylib/src/rtext.c:DrawText so perform exactly the same as default implementation
+	Vector2 position = { (float)posX, (float)posY };
+	int defaultFontSize = 10;   // Default Font chars height in pixel
+	if (fontSize < defaultFontSize) fontSize = defaultFontSize;
+	int spacing = fontSize/defaultFontSize;
+
+	DrawTextEx(font, text, position, fontSize, spacing, color);
+}
+
+// Same as DrawTextPro, but autofills the font
+void ADrawTextPro(const char *text, Vector2 position, Vector2 origin, float rotation, float fontSize, float spacing, Color tint) {
+	DrawTextPro(font, text, position, origin, rotation, fontSize, spacing, tint);
+}
+
 void Run(char *filename)
 {
 	InitWindow(800, 600, "Mini Asm");
 	SetTargetFPS(60);
+ 	font = LoadFont(FONT);
 	Rectangle memory_pointer = {	// Program Counter Box
 		.x = 0,
 		.y = 0,
