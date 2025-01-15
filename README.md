@@ -1,6 +1,6 @@
 # Brandeis Operating Systems MiniASM Interpreter and Visualizer
 __[Online Demo](https://archerheffern.github.io/casm)__  
-__[Youtube Tutorial(TODO)](https://youtube.com)__
+
 ## Visualizer
 
 ![visualizer_demo](https://github.com/user-attachments/assets/f9077f9c-567d-4874-976c-5069a905d3e6)
@@ -15,16 +15,14 @@ __[Youtube Tutorial(TODO)](https://youtube.com)__
 
 ## Features
 - Easily upload assembly files using drag and drop
-- Testing Framework for viewing or integration into other tools
-- Aids in visualization via single step and continue. Or jump to the end if thats not for you.
+- Testing Framework
+- Visualize with single step and continue. Or jump to the end
 - Get fast feedback to program changes. Casm detects changes to your assembly source file and automatically reloads file
 - Find syntax errors quickly with descriptive error messages
-- Pleasing to the eyes with smooth animations
-- Easy to use. Power and simplicity don't have to be mutually exclusive
+- Catches possible issues like infinite loops, memory overwrite bugs, and UB (eg. Reading from uninitialized memory)
 
 ## Getting Started
-1. Install precompiled binaries from releases  
-Run on the command line `./visualizer|./interpreter [assembly_program]`
+1. Use online demo
 
 2. Build from source
 ``` bash
