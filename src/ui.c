@@ -24,11 +24,18 @@ Color CELL_COLOR = {.r = 0x2A,.g = 0x2C,.b = 0x2E,.a = 0xFF };
 bool cont = false;
 bool end = false;
 Font font = {0};
+Font no_font = {0};
 
 int FD = -1;
 char *FILE_PATH = NULL;
 time_t last_modification_time_s = 0;
 
+Font GetFont() {
+	if (memcmp(&font, &no_font, sizeof(Font)) == 0) {
+		return GetFontDefault();
+	}
+	return font;
+}
 void ADrawText(const char *text, int posX, int posY, int fontSize, Color color) {
 	// Logic taken from raylib/src/rtext.c:DrawText so perform exactly the same as default implementation
 	Vector2 position = { (float)posX, (float)posY };

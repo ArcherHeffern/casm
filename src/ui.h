@@ -34,6 +34,8 @@ char* GetErrorMsg();
 void SetHaltflag(bool flag);
 void SetErrorMsg(char* msg);
 bool HasError();
+
+Font GetFont();
 void ADrawText(const char *text, int posX, int posY, int fontSize, Color color); 
 void ADrawTextPro(const char *text, Vector2 position, Vector2 origin, float rotation, float fontSize, float spacing, Color tint);
 

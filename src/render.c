@@ -55,7 +55,8 @@ void RenderRegister(State* state, int i) {
 			asprintf(&msg, "PC: %d", *state->registers[0]);
 		}
 	}
-	ADrawText(msg, x+20, y+REGISTER_CELL_HEIGHT/2, TEXT_SIZE, faded_color);
+	Vector2 text_size = MeasureTextEx(GetFont(), msg, TEXT_SIZE, 1);
+	ADrawText(msg, x+10, y+REGISTER_CELL_HEIGHT/2-text_size.y/2, TEXT_SIZE, faded_color);
 	free(msg);
 }
 
@@ -86,7 +87,7 @@ void RenderMemoryCell(State* state, int i) {
 		.height=CELL_HEIGHT * multiplier
 	};
 	char* msg = memory[i];
-	Vector2 text_size = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1);
+	Vector2 text_size = MeasureTextEx(GetFont(), msg, TEXT_SIZE, 1);
 
 	DrawRectangleRec(
 		cell,
@@ -96,7 +97,7 @@ void RenderMemoryCell(State* state, int i) {
 
 	// Label Box
 	if (label_name) {
-		Vector2 text_size = MeasureTextEx(GetFontDefault(), label_name, TEXT_SIZE, 1);
+		Vector2 text_size = MeasureTextEx(GetFont(), label_name, TEXT_SIZE, 1);
 		Rectangle label_box = {
 			.x=cell.x,
 			.y=cell.y,
@@ -110,7 +111,7 @@ void RenderMemoryCell(State* state, int i) {
 	// Address Box
 	char address[10];
 	sprintf(address, "%4d", i*4);
-	text_size = MeasureTextEx(GetFontDefault(), address, TEXT_SIZE, 1);
+	text_size = MeasureTextEx(GetFont(), address, TEXT_SIZE, 1);
 	ADrawText(address, cell.x+LABEL_BOX_PADDING/2, cell.y+cell.height - text_size.y - LABEL_BOX_PADDING, TEXT_SIZE, FONT_COLOR);
 }
 
@@ -140,7 +141,7 @@ void RenderStorageCell(State* state, int i) {
 		.width=CELL_WIDTH * multiplier,
 		.height=CELL_HEIGHT * multiplier
 	};
-	Vector2 text_size = MeasureTextEx(GetFontDefault(), msg, TEXT_SIZE, 1);
+	Vector2 text_size = MeasureTextEx(GetFont(), msg, TEXT_SIZE, 1);
 
 	DrawRectangleRec(
 		cell,
@@ -150,7 +151,7 @@ void RenderStorageCell(State* state, int i) {
 
 	char address[10];
 	sprintf(address, "%4d", i*4);
-	text_size = MeasureTextEx(GetFontDefault(), address, TEXT_SIZE, 1);
+	text_size = MeasureTextEx(GetFont(), address, TEXT_SIZE, 1);
 	ADrawText(address, cell.x+LABEL_BOX_PADDING/2, cell.y+cell.height - text_size.y - LABEL_BOX_PADDING, TEXT_SIZE, FONT_COLOR);
 }
 
@@ -163,7 +164,7 @@ void RenderControls(State* state) {
 
 
 	char* instruction = "Drag assembly file to upload";
-	Vector2 textSize = MeasureTextEx(GetFontDefault(), instruction, TEXT_SIZE, 1);
+	Vector2 textSize = MeasureTextEx(GetFont(), instruction, TEXT_SIZE, 1);
 	ADrawText(instruction, GetScreenWidth()/2 - textSize.x/2, top - REGISTER_CELL_HEIGHT*.75, TEXT_SIZE, FONT_COLOR);
 	
 	RenderButton(state, left, top, "(S)tep");
@@ -183,7 +184,7 @@ void RenderButton(State* state, int x, int y, char* text) {
 		.height=height
 	};
 	DrawRectangleRec(button, render_info->button_color);
-	Vector2 textSize = MeasureTextEx(GetFontDefault(), text, TEXT_SIZE, 1);
+	Vector2 textSize = MeasureTextEx(GetFont(), text, TEXT_SIZE, 1);
 	ADrawText(
 		text, 
 		button.x+button.width/2-textSize.x/2, 
@@ -196,13 +197,13 @@ void RenderButton(State* state, int x, int y, char* text) {
 void RenderHeader() {
 	DrawRectangle(0, 0, GetScreenWidth(), HEADER_GAP, BACKGROUND_COLOR);
 
-	float textWidth = MeasureTextEx(GetFontDefault(), "Registers", HEADER_SIZE, 1).x;
+	float textWidth = MeasureTextEx(GetFont(), "Registers", HEADER_SIZE, 1).x;
 	Vector2 position = { .x=GetScreenWidth()/2 - textWidth/2, .y=CELL_GAP };
 	ADrawText("registers", position.x, position.y, HEADER_SIZE, FONT_COLOR);
 
 	ADrawText("Memory", X_PADDING, CELL_GAP, HEADER_SIZE, FONT_COLOR); // Title
 
-	textWidth = MeasureTextEx(GetFontDefault(), "Storage", HEADER_SIZE, 1).x;
+	textWidth = MeasureTextEx(GetFont(), "Storage", HEADER_SIZE, 1).x;
 	ADrawText("Storage", GetScreenWidth() - X_PADDING - textWidth, CELL_GAP, HEADER_SIZE, FONT_COLOR);
 	
 }

@@ -14,7 +14,7 @@
 
 // Rendering Constants
 #define HEADER_SIZE 24
-#define TEXT_SIZE 12
+#define TEXT_SIZE 14
 #define SLIDE_IN_TIME 0.2 // Seconds
 #define MEMORY_CELL_SET_VALUE_TIME 1
 #define X_PADDING 40
