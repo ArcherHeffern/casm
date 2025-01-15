@@ -26,7 +26,7 @@ else
 endif
 
 # Default target
-all: visualizer interpreter
+all: vis interp
 vis: $(VISUALISER_OBJS) raylib $(VISUALIZER_TARGET)
 interp: $(INTERPRETER_OBJS) raylib $(INTERPRETER_TARGET)
 
