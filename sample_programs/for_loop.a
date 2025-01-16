@@ -1,6 +1,11 @@
-LOAD R1, =0 ; i
-LOAD R2, =10 ; End condition
+LOAD R1, =0
+LOAD R2, =10
 LOOP: BGEQ R1, R2, END
 INC R1
 BR LOOP
-END: HALT ; for (int i = 0; i < 10; i++) {}
+END: HALT 
+
+; Equivalent to:
+; for (int i = 0; i < 10; i++) {
+;
+;}
