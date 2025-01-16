@@ -293,8 +293,9 @@ bool LoadProgram(char **program, int num_lines)
 		return false;
 	}
 	for (int i = 0; i < num_lines; i++) {
-		SetMemoryCellValue(s, i, program[i], RESET_DURATION,
-				   i * RESET_DELAY);
+		if (program[i] != NULL) {
+			SetMemoryCellValue(s, i, program[i], RESET_DURATION, i * RESET_DELAY);
+		}
 	}
 	return !HasError();
 }
