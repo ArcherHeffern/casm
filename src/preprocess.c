@@ -16,7 +16,6 @@ void Preprocess(LabelState* ls, char** lines, int num_lines) {
 		char* line = lines[i];
 		int cur = 0;
 		while (IsWhitespace(*line)){line++;}
-		lines[i] = line;
 		while (1) {
 			if (line[cur] == '\0') break;
 			if (line[cur] == ' ') break;
@@ -71,6 +70,11 @@ void Preprocess(LabelState* ls, char** lines, int num_lines) {
 			cur--;
 		}
 		line[cur+1] = '\0';
+		if (line[0] != '\0') {
+			lines[i] = line;
+		} else {
+			lines[i] = NULL;
+		}
 	}
 	ls->count = num_labels;
 }
