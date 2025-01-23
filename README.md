@@ -1,13 +1,7 @@
 # Brandeis Operating Systems MiniASM Interpreter and Visualizer
-__[Online Demo](https://archerheffern.github.io/casm)__  
 
 ## Visualizer
-
-![visualizer_demo](https://github.com/user-attachments/assets/f9077f9c-567d-4874-976c-5069a905d3e6)
-
-![visualizer_error_msg](https://github.com/user-attachments/assets/4f024951-749a-4ceb-9f5c-03c353c5832e)
-
-![visualizer_success_msg](https://github.com/user-attachments/assets/3b826676-a6c4-46f9-9d3b-14e5e2cf3caa)
+__[Online Demo using Webassembly](https://archerheffern.github.io/casm)__  
 
 ## Interpreter
 
