@@ -1,4 +1,4 @@
-# Brandeis Operating Systems MiniASM Interpreter and Visualizer
+# Assembly Interpreter and Visualizer
 
 ## Visualizer
 __[Online Demo using Webassembly](https://archerheffern.github.io/casm)__  
